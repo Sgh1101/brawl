@@ -21,8 +21,8 @@ export class Tutorial {
     match.brawlers.push(this.dummy);
     this.step = 0; this.stepStart = 0; this.superUsedAt = null; this.doneAt = null;
   }
-  // 카메라가 당겨질 현재 목표
-  get focus() { return this.current?.id === 'move' ? this.marker : this.dummy; }
+  // 카메라는 늘 허수아비 쪽으로 당김 (표시는 플레이어와 허수아비 사이라 함께 보임, 위 안내 띠에 허수아비가 안 가림)
+  get focus() { return this.dummy; }
   get current() { return Tutorial.STEPS[this.step] || null; }
   next() { this.step++; this.stepStart = this.m.time; if (this.current?.id === 'super') this.m.player.superCharge = 1; if (!this.current) this.doneAt = this.m.time; }
   update() {
