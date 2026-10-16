@@ -63,3 +63,4 @@ canvas{display:block;width:100vw;height:100vh}
 }
 .road .basis{position:absolute;top:64px;left:0;right:0;text-align:center;font-size:22px}
 .results .note{font-family:system-ui;font-weight:700;font-size:14px;opacity:.75;margin-top:-8px}
+#game:focus{outline:none} /* 경기 시작 때 캔버스에 포커스를 주므로 포커스 테두리는 숨김 */

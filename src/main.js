@@ -19,11 +19,17 @@ class App {
     this.canvas.tabIndex = 0; // 키 입력이 바로 먹도록 경기 시작 시 캔버스에 포커스
     // 경기 중 새로고침/탭 닫기/페이지 이동은 결과 없이 홈으로 돌아가므로 브라우저 경고를 띄움
     addEventListener('beforeunload', e => { if (this.match) { e.preventDefault(); e.returnValue = ''; } });
-    this.goHome(); requestAnimationFrame(t => this.frame(t));
+    if (Progress.load().tutorialDone) this.goHome(); else this.startTutorial();
+    requestAnimationFrame(t => this.frame(t));
   }
   goHome() { this.match = null; this.screens.show(HomeScreen); }
   startMatch(opts) {
     this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); this.input.drain(); this.screens.show(null); this.canvas.focus({ preventScroll: true }); }
+  // 첫 실행: 홈 대신 연습장. 끝나면 결과 화면 없이 홈으로.
+  startTutorial() {
+    this.match = new Match({ mode: 'tutorial', playerBrawler: Progress.load().selected });
+    this.input.drain(); this.screens.show(null); this.canvas.focus({ preventScroll: true });
+  }
   aimDir(isSuper = false) {
     const p = this.match.player, s = this.input.sticks.aim;
     if (s && s.mag > 0.25) return { x: s.dx, y: s.dy, power: s.mag };
@@ -48,7 +54,7 @@ class App {
       const aim = this.aimDir();
       for (const e of this.input.drain()) {
         if (e.type === 'super') m.weapons.superAttack(m.player, this.aimDir(true) || this.autoAim(true));
-        if (e.type === 'fire') m.weapons.attack(m.player, e.auto ? this.autoAim() : e.dir);
+        if (e.type === 'fire') m.weapons.attack(m.player, e.click ? aim : e.auto ? this.autoAim() : e.dir);
       }
       if (!this.input.touch && this.input.mouse.down && aim) m.weapons.attack(m.player, aim);
       if (aim && !m.player.dash) m.player.aim = aim;
@@ -64,6 +70,7 @@ class App {
     requestAnimationFrame(tt => this.frame(tt));
   }
   finish(m) {
+    if (m.mode.tutorial) { Progress.completeTutorial(); this.goHome(); return; }
     const result = m.over.winner === 'draw' ? 'draw' : m.over.playerWon ? 'win' : 'lose';
     const r = Progress.applyResult(m.player.def.id, result);
     this.match = null;
