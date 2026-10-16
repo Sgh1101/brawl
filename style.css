@@ -1,0 +1,26 @@
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#1b2a4a;font-family:"Trebuchet MS",system-ui,sans-serif;color:#fff;touch-action:none}
+canvas{display:block;width:100vw;height:100vh}
+#screens{position:fixed;inset:0;pointer-events:none}
+.screen{position:absolute;inset:0;pointer-events:auto;background:radial-gradient(circle at 50% 40%,#3d6fd1,#1b2a6a 70%);display:flex}
+.stroke{text-shadow:0 3px 0 #000,2px 0 0 #000,-2px 0 0 #000,0 -2px 0 #000}
+.topbar{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.profile{background:#0008;border-radius:12px;padding:6px 14px;font-weight:900}
+.currency{display:flex;gap:8px}.currency span{background:#0008;border-radius:10px;padding:6px 12px;font-weight:900}
+.side{position:absolute;left:12px;top:70px;display:flex;flex-direction:column;gap:10px}
+.btn{border:3px solid #000;border-radius:12px;font-weight:900;font-size:18px;color:#fff;cursor:pointer;padding:10px 16px;box-shadow:0 5px 0 #000;font-family:inherit}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #000}
+.btn.blue{background:#3a8ef0}.btn.gray{background:#667}.btn.disabled{opacity:.5}
+.btn.play{background:#ffcc1f;color:#222;font-size:34px;padding:14px 48px;text-shadow:none}
+.center{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);text-align:center}
+.center canvas{width:220px;height:220px}
+.bname{font-size:30px;font-weight:900}
+.roster{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.card{width:84px;border:3px solid #000;border-radius:10px;background:#28407a;padding:4px;cursor:pointer;font-weight:900;font-size:12px;text-align:center}
+.card.sel{background:#ffcc1f;color:#222}
+.bottomright{position:absolute;right:16px;bottom:16px;display:flex;gap:10px;align-items:flex-end}
+.mode{background:#5b2fb0;border:3px solid #000;border-radius:12px;padding:8px 14px;font-weight:900;text-align:left}
+.mode small{display:block;opacity:.8;font-size:11px}
+.results{flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000b}
+.results h1{font-size:64px}.win{color:#ffd23f}.lose{color:#ff5a5a}.draw{color:#ddd}
+.row{display:flex;gap:10px}
