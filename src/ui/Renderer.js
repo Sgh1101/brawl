@@ -40,8 +40,6 @@ export class Renderer {
         for (let i = 0; i < 4; i++) ctx.arc(x * T + 12 + (i % 2) * 24, y * T + 12 + (i >> 1) * 24, 16, 0, Math.PI * 2); ctx.fill(); }
     } };
     walls(0);
-    // 조준선
-    if (!p.dead && this.aimPreview) Renderer.aimLine(ctx, p, this.aimPreview);
     // 적이 젬 4개 이상 들고 있으면 수풀 안에서도 흐리게 보임 (그림만, 봇 판단엔 영향 없음)
     const shown = m.brawlers.filter(b => !b.dead && (m.visibleTo(b, p) || b.gems >= Renderer.CARRIER_GLOW)), lift = Renderer.labelLift(shown);
     for (const b of shown) {
@@ -51,6 +49,8 @@ export class Renderer {
       else CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
     }
     walls(1);
+    // 조준선 (수풀에 가리지 않게 수풀 위에)
+    if (!p.dead && this.aimPreview) Renderer.aimLine(ctx, p, this.aimPreview);
     // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (몸통만 반투명, 팀 고리는 불투명 + 테두리) (적은 위 규칙대로 숨김/드러남)
     for (const b of shown) if (b.team === p.team && Renderer.touchesBush(a, b)) CharacterSprite.drawInBush(ctx, b, Renderer.teamColor(b, p), m.time, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
