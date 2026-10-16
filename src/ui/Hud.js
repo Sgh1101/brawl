@@ -8,7 +8,7 @@ export class Hud {
     const mm = Math.floor(m.timeLeft / 60), ss = String(Math.floor(m.timeLeft % 60)).padStart(2, '0');
     if (mode.tutorial) mode.drawHud(ctx, input.touch, txt);
     else {
-      Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
+      if (mode.board) mode.board(ctx, W, m, `${mm}:${ss}`, txt); else Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
       Hud.intro(ctx, m, txt); Hud.tip(ctx, m, txt); Hud.killFeed(ctx, m);
       if (mode.countdown !== null) Hud.countdown(ctx, m, txt);
     }
@@ -73,8 +73,9 @@ export class Hud {
     ctx.save(); ctx.globalAlpha = Math.min(1, (Hud.INTRO - m.time) / 0.8);
     const W = innerWidth, y = innerHeight * 0.36, size = Math.max(20, Math.min(40, W / 22));
     ctx.fillStyle = '#000b'; ctx.fillRect(0, y - size * 1.4, W, size * 2.9);
-    txt('가운데에서 젬을 모아!', W / 2, y, size, '#e9b8ff');
-    txt('10개 들고 15초 버티면 승리', W / 2, y + size * 1.2, size * 0.8, '#fff');
+    const [l1, l2] = m.mode.constructor.INTRO_TEXT ?? ['가운데에서 젬을 모아!', '10개 들고 15초 버티면 승리'];
+    txt(l1, W / 2, y, size, '#e9b8ff');
+    txt(l2, W / 2, y + size * 1.2, size * 0.8, '#fff');
     ctx.restore();
   }
   // 짧은 팁: 처음 죽었을 때 / 처음 궁극기가 차기 시작할 때 (경기당 한 번씩, 3초)
@@ -82,7 +83,7 @@ export class Hud {
   static tip(ctx, m, txt) {
     const p = m.player; m.tips ??= { shown: new Set(), text: null, until: 0 };
     const t = m.tips, show = (key, text) => { if (!t.shown.has(key)) { t.shown.add(key); t.text = text; t.until = m.time + Hud.TIP_SEC; } };
-    if (p.dead) show('death', '죽으면 젬을 떨어뜨려요');
+    if (p.dead) show('death', m.mode.constructor.DEATH_TIP ?? '죽으면 젬을 떨어뜨려요');
     else if (p.superReady) show('superReady', `궁극기 준비! ${p.def.superDesc} — ${Hud.superKey()}`);
     else if (p.superCharge > 0 && m.time > Hud.INTRO) show('super', '적을 맞히면 궁극기가 차요');
     if (!t.text || m.time > t.until) return;

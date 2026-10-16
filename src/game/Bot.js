@@ -8,6 +8,7 @@ export class Bot {
     if (b.dead) return { x: 0, y: 0 };
     b.brain ??= { strafe: Math.random() < 0.5 ? 1 : -1, strafeT: 0, react: 0.3 + Math.random() * 0.3, seen: 0, stuckT: 0, last: { x: b.x, y: b.y } };
     const br = b.brain, k = Bot.tuning(m);
+    const ctl = m.mode.botControl?.(b); if (ctl) { const v = Bot.avoid(b, ctl, m, dt); return { x: v.x * k.speed, y: v.y * k.speed }; } // 모드 전용 행동(공 줍기/몰기)
     const enemies = m.brawlers.filter(e => e.team !== b.team && !e.dead && m.visibleTo(e, b));
     let target = null, td = 1e9;
     const role = b.def.role;

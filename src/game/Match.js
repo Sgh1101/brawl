@@ -11,7 +11,7 @@ export class Match {
   constructor({ mode = 'gemGrab', playerBrawler = 'bolder', easy = false }) {
     this.easy = easy; // 처음 몇 판: 봇이 덜 공격적
     const tutorial = mode === 'tutorial';
-    this.arena = new Arena(tutorial ? Maps.practice : Maps.gemGrab);
+    this.arena = new Arena(Maps[Modes.registry[mode].map]);
     this.time = 0; this.timeLeft = Match.DURATION; this.over = null; this.stats = { kills: 0, deaths: 0 };
     this.weapons = new Weapons(this);
     const ids = Brawlers.list.map(b => b.id), shuffle = a => [...a].sort(() => Math.random() - 0.5);

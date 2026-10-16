@@ -74,7 +74,7 @@ class App {
     const result = m.over.winner === 'draw' ? 'draw' : m.over.playerWon ? 'win' : 'lose';
     const r = Progress.applyResult(m.player.def.id, result);
     this.match = null;
-    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, coins: r.coins, unlocked: r.unlocked, stats: m.stats });
+    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, coins: r.coins, unlocked: r.unlocked, stats: m.stats, summary: m.mode.resultSummary?.() });
   }
 }
 window.app = new App();

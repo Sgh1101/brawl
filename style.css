@@ -32,7 +32,7 @@ canvas{display:block;width:100vw;height:100vh}
 .mode{background:#ff8c1a;border:4px solid var(--ink);border-radius:14px;padding:6px 14px;text-align:left;box-shadow:0 4px 0 var(--ink)}
 .mode small{display:block;opacity:.9;font-size:12px;font-family:system-ui;font-weight:800}
 .results{flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000b}
-.results h1{font-size:72px}.win{color:#ffd23f}.lose{color:#ff5a5a}.draw{color:#ddd}.unlock{font-size:26px;color:#7dff9a}
+.results h1{font-size:72px}.results .score{font-size:44px;margin-top:-12px}.win{color:#ffd23f}.lose{color:#ff5a5a}.draw{color:#ddd}.unlock{font-size:26px;color:#7dff9a}
 .row{display:flex;gap:10px}
 .road h2{font-size:32px;font-weight:400}
 .track{position:absolute;left:0;right:0;top:90px;bottom:20px;overflow-x:auto;padding:30px 24px}
