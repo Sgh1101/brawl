@@ -34,7 +34,7 @@ export class Progress {
   }
   static claim(at) {
     const d = Progress.load(), m = TrophyRoad.milestones.find(x => x.at === at);
-    if (!m || d.claimed.includes(at) || Progress.total(d) < at) return false;
+    if (!m || d.claimed.includes(at) || Math.max(d.best || 0, Progress.total(d)) < at) return false;
     d.claimed.push(at); d.coins = (d.coins || 0) + (m.coins || 0); Storage.save(d); return true;
   }
 }
