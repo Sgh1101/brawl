@@ -61,5 +61,5 @@ canvas{display:block;width:100vw;height:100vh}
   #home .center canvas{width:min(120px,22vh);height:min(120px,22vh)}#home .bname{font-size:24px}#home .brole{font-size:14px}
   #home .center{top:calc((100% - var(--bar) - 100px) / 2 + 22px)}
 }
-.road .basis{position:absolute;top:66px;left:0;right:0;text-align:center;font-size:16px;opacity:.9}
+.road .basis{position:absolute;top:64px;left:0;right:0;text-align:center;font-size:22px}
 .results .note{font-family:system-ui;font-weight:700;font-size:14px;opacity:.75;margin-top:-8px}

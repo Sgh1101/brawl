@@ -7,7 +7,7 @@ export class Hud {
     const txt = (t, x, y, size, col = '#fff') => { ctx.font = `900 ${size}px sans-serif`; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y); };
     const mm = Math.floor(m.timeLeft / 60), ss = String(Math.floor(m.timeLeft % 60)).padStart(2, '0');
     Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
-    Hud.intro(ctx, m, txt);
+    Hud.intro(ctx, m, txt); Hud.tip(ctx, m, txt);
     if (mode.countdown !== null) txt(`${mode.leader === m.player.team ? '승리까지' : '패배까지'} ${Math.ceil(mode.countdown)}`, W / 2, 96, 28, mode.leader === m.player.team ? '#7dff9a' : '#ff6b6b');
     if (m.player.dead) txt(`부활 ${Math.ceil(m.player.respawnT)}`, W / 2, innerHeight / 2, 40);
     const p = m.player;
@@ -19,7 +19,7 @@ export class Hud {
         ctx.beginPath(); ctx.arc(base.x + (s ? s.dx * s.mag * L.R : 0), base.y + (s ? s.dy * s.mag * L.R : 0), L.R * 0.42, 0, 7); ctx.fill(); }
       Hud.superBtn(ctx, L.sup.x, L.sup.y, L.R * 0.7, p, txt);
     } else {
-      Hud.superBtn(ctx, W - 70, innerHeight - 70, 44, p, txt); txt('E', W - 70, innerHeight - 20, 16);
+      Hud.superBtn(ctx, W - 70, innerHeight - 70, 44, p, txt); txt('E', W - 70, innerHeight - 124, 16);
       ctx.font = '600 13px sans-serif'; ctx.fillStyle = '#fffa'; ctx.textAlign = 'left';
       ctx.fillText('WASD 이동 · 클릭 공격 · E 슈퍼', 12, innerHeight - 14);
     }
@@ -40,8 +40,8 @@ export class Hud {
     }
     txt(`/${G}`, W / 2, 60, 14, '#fffa');
   }
-  // 경기 시작 안내 (처음 4초 크게, 페이드아웃)
-  static INTRO = 4;
+  // 경기 시작 안내 (처음 7초 크게, 마지막 0.8초 페이드아웃)
+  static INTRO = 7;
   static intro(ctx, m, txt) {
     if (m.time > Hud.INTRO) return;
     ctx.save(); ctx.globalAlpha = Math.min(1, (Hud.INTRO - m.time) / 0.8);
@@ -50,6 +50,20 @@ export class Hud {
     txt('가운데에서 젬을 모아!', W / 2, y, size, '#e9b8ff');
     txt('10개 들고 15초 버티면 승리', W / 2, y + size * 1.2, size * 0.8, '#fff');
     ctx.restore();
+  }
+  // 짧은 팁: 처음 죽었을 때 / 처음 궁극기가 차기 시작할 때 (경기당 한 번씩, 3초)
+  static TIP_SEC = 3;
+  static tip(ctx, m, txt) {
+    const p = m.player; m.tips ??= { shown: new Set(), text: null, until: 0 };
+    const t = m.tips, show = (key, text) => { if (!t.shown.has(key)) { t.shown.add(key); t.text = text; t.until = m.time + Hud.TIP_SEC; } };
+    if (p.dead) show('death', '죽으면 젬을 떨어뜨려요');
+    else if (p.superCharge > 0 && m.time > Hud.INTRO) show('super', '적을 맞히면 궁극기가 차요');
+    if (!t.text || m.time > t.until) return;
+    const W = innerWidth, y = Renderer.HUD_TOP + 90, size = Math.max(16, Math.min(26, W / 32));
+    ctx.save(); ctx.globalAlpha = Math.min(1, (t.until - m.time) / 0.5);
+    ctx.font = `900 ${size}px sans-serif`; const w = ctx.measureText(t.text).width + 40;
+    ctx.fillStyle = '#000b'; ctx.beginPath(); ctx.roundRect(W / 2 - w / 2, y - size * 1.1, w, size * 1.7, 12); ctx.fill();
+    txt('💡 ' + t.text, W / 2, y + size * 0.15, size, '#ffe28a'); ctx.restore();
   }
   // 슈퍼 버튼: 번개 아이콘 + 충전 고리. 충전 전에도 아이콘이 흐리게 보임
   static superBtn(ctx, x, y, r, p, txt) {
@@ -60,6 +74,7 @@ export class Hud {
     const s = r * 0.5; ctx.fillStyle = ready ? '#fff' : '#ffd23f88'; ctx.beginPath();
     ctx.moveTo(x + s * 0.15, y - s); ctx.lineTo(x - s * 0.55, y + s * 0.12); ctx.lineTo(x - s * 0.02, y + s * 0.12);
     ctx.lineTo(x - s * 0.15, y + s); ctx.lineTo(x + s * 0.55, y - s * 0.12); ctx.lineTo(x + s * 0.02, y - s * 0.12); ctx.closePath(); ctx.fill();
-    txt(ready ? 'SUPER!' : `${Math.floor(c * 100)}%`, x, y - r - 8, 14, ready ? '#ffd23f' : '#fff');
+    // 충전 %는 버튼 안쪽 아래에 (위로 띄우면 모바일에서 캐릭터와 겹침)
+    if (ready) txt('SUPER!', x, y + r * 0.8, Math.max(11, r * 0.3), '#fff'); else txt(`${Math.floor(c * 100)}%`, x, y + r * 0.78, Math.max(10, r * 0.3), '#fff');
   }
 }

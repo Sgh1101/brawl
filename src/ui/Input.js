@@ -6,6 +6,9 @@ export class Input {
     this.sticks = { move: null, aim: null }; this.events = [];
     addEventListener('keydown', e => { this.keys.add(e.code); if (e.code === 'KeyE') this.events.push({ type: 'super' }); });
     addEventListener('keyup', e => this.keys.delete(e.code));
+    // 창이 포커스를 잃으면 눌린 키를 비움 (키가 눌린 채로 남는 문제 방지)
+    addEventListener('blur', () => { this.keys.clear(); this.mouse.down = false; });
+    canvas.addEventListener('pointerdown', () => canvas.focus({ preventScroll: true }));
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('pointerdown', e => this.down(e));
     addEventListener('pointermove', e => this.move(e));

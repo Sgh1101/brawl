@@ -16,10 +16,21 @@ class App {
     this.screens = new ScreenManager(document.getElementById('screens'), this);
     this.match = null; this.last = performance.now();
     addEventListener('resize', () => this.renderer.resize()); this.renderer.resize();
+    this.canvas.tabIndex = 0; // 키 입력이 바로 먹도록 경기 시작 시 캔버스에 포커스
+    // 경기 중 페이지를 떠나는 경로(뒤로 가기 버튼/제스처, 새로고침, 탭 닫기)는 결과 없이 홈으로 돌아가므로 막거나 확인을 받음
+    addEventListener('beforeunload', e => { if (this.match) { e.preventDefault(); e.returnValue = ''; } });
+    addEventListener('popstate', () => {
+      if (!this.match) return;
+      if (confirm('경기를 나갈까요? 나가면 패배로 처리돼요.')) this.forfeit(); else history.pushState({ inMatch: true }, '');
+    });
     this.goHome(); requestAnimationFrame(t => this.frame(t));
   }
   goHome() { this.match = null; this.screens.show(HomeScreen); }
-  startMatch(opts) { this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); this.input.drain(); this.screens.show(null); }
+  startMatch(opts) {
+    if (!history.state?.inMatch) history.pushState({ inMatch: true }, '');
+    this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); this.input.drain(); this.screens.show(null); this.canvas.focus({ preventScroll: true }); }
+  // 경기 포기: 결과 화면을 거쳐서 나감 (결과 없이 홈으로 가는 길을 없앰)
+  forfeit() { const m = this.match; if (!m || m.over) return; m.over = { winner: m.player.team === 'blue' ? 'red' : 'blue', playerWon: false, forfeit: true }; }
   aimDir(isSuper = false) {
     const p = this.match.player, s = this.input.sticks.aim;
     if (s && s.mag > 0.25) return { x: s.dx, y: s.dy, power: s.mag };
@@ -59,7 +70,8 @@ class App {
     const result = m.over.winner === 'draw' ? 'draw' : m.over.playerWon ? 'win' : 'lose';
     const r = Progress.applyResult(m.player.def.id, result);
     this.match = null;
-    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, coins: r.coins, unlocked: r.unlocked, stats: m.stats });
+    if (history.state?.inMatch) history.replaceState(null, '');
+    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, forfeit: !!m.over.forfeit, coins: r.coins, unlocked: r.unlocked, stats: m.stats });
   }
 }
 window.app = new App();

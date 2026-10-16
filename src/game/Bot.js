@@ -3,7 +3,7 @@ import { Vec } from '../core/Vec.js';
 export class Bot {
   static EASY_MATCHES = 3;
   // 쉬운 판: 반응 느림, 덜 쏨, 조준 흔들림 큼, 먼저 쳐들어가지 않음
-  static tuning(m) { return m.easy ? { react: 0.9, fire: 0.025, spread: 0.6, superP: 0.008, push: false } : { react: 0, fire: 0.06, spread: 0.25, superP: 0.02, push: true }; }
+  static tuning(m) { return m.easy ? { react: 1.4, fire: 0.012, spread: 1.0, superP: 0, push: false, speed: 0.7, collectRange: 380 } : { react: 0, fire: 0.06, spread: 0.25, superP: 0.02, push: true, speed: 1, collectRange: Infinity }; }
   static think(b, m, dt) {
     if (b.dead) return { x: 0, y: 0 };
     b.brain ??= { strafe: Math.random() < 0.5 ? 1 : -1, strafeT: 0, react: 0.3 + Math.random() * 0.3, seen: 0, stuckT: 0, last: { x: b.x, y: b.y } };
@@ -20,6 +20,7 @@ export class Bot {
         && target.hp < target.def.hp * 0.7) { m.weapons.superAttack(b, Vec.norm(target.x - b.x, target.y - b.y)); }
     const range = b.def.attack.range;
     let goal = m.mode.objectiveFor(b);
+    if (goal.kind === 'collect' && Math.hypot(goal.x - b.x, goal.y - b.y) > k.collectRange) goal = { kind: 'hold', x: m.arena.mine.x, y: m.arena.mine.y + (b.team === 'blue' ? 200 : -200) };
     if (!k.push && goal.kind === 'attack') goal = { kind: 'hold', x: m.arena.mine.x, y: m.arena.mine.y + (b.team === 'blue' ? 200 : -200) };
     if (b.hp < b.def.hp * 0.35 && target && td < range * 1.3) goal = { kind: 'retreat', x: b.spawn.x, y: b.spawn.y };
     let want = { x: 0, y: 0 };
@@ -47,7 +48,7 @@ export class Bot {
       }
       want = Bot.toward(b, goal, m, 1);
     }
-    return Bot.avoid(b, want, m, dt);
+    const v = Bot.avoid(b, want, m, dt); return { x: v.x * k.speed, y: v.y * k.speed };
   }
   // 서포트: 다친 아군이 근처에 있으면 그쪽으로 붙어서 힐 탄/힐 슈퍼를 쏨
   static support(b, m, dt) {
