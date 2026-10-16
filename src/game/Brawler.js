@@ -30,6 +30,11 @@ export class Brawler {
     if (!arena.circleHits(this.x + dx, this.y, this.r)) this.x += dx;
     if (!arena.circleHits(this.x, this.y + dy, this.r)) this.y += dy;
   }
+  heal(amount, source) {
+    if (this.dead) return;
+    this.hp = Math.min(this.def.hp, this.hp + amount); this.healFx = 0.4;
+    if (source && source !== this) source.superCharge = Math.min(1, source.superCharge + amount / source.def.superCost / 2);
+  }
   damage(amount, source, match) {
     if (this.dead) return;
     this.hp -= amount; this.lastHurt = match.time; this.flash = 0.12;

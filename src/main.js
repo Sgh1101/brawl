@@ -3,7 +3,7 @@ import { Input } from './ui/Input.js';
 import { Renderer } from './ui/Renderer.js';
 import { Hud } from './ui/Hud.js';
 import { Vec } from './core/Vec.js';
-import { Storage } from './core/Storage.js';
+import { Progress } from './core/Progress.js';
 import { ScreenManager } from './screens/ScreenManager.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { ResultsScreen } from './screens/ResultsScreen.js';
@@ -56,10 +56,9 @@ class App {
   }
   finish(m) {
     const result = m.over.winner === 'draw' ? 'draw' : m.over.playerWon ? 'win' : 'lose';
-    const trophyDelta = { win: 8, lose: -4, draw: 0 }[result];
-    Storage.update(d => { d.trophies = Math.max(0, d.trophies + trophyDelta); d.coins += result === 'win' ? 20 : 8; });
+    const r = Progress.applyResult(m.player.def.id, result);
     this.match = null;
-    this.screens.show(ResultsScreen, { result, trophyDelta, stats: m.stats });
+    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, unlocked: r.unlocked, stats: m.stats });
   }
 }
 window.app = new App();
