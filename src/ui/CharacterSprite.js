@@ -4,6 +4,7 @@ import { BrawlerArt } from './BrawlerArt.js';
 // 그림만 다루고 게임 상태는 바꾸지 않음. 걷기 위상은 렌더 전용으로 WeakMap에 보관.
 export class CharacterSprite {
   static OUTLINE = '#1a1206';
+  static RING_OUTLINE = 'rgba(0,0,0,0.6)';
   static anim = new WeakMap();
   static step(b, dt) {
     const a = CharacterSprite.anim.get(b) || { phase: 0, moving: 0 };
@@ -17,7 +18,7 @@ export class CharacterSprite {
     return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
   }
   // b: Brawler, team: 팀 색, t: 경기 시간, dt: 프레임 시간
-  static draw(ctx, b, team, t, dt, front = false) {
+  static draw(ctx, b, team, t, dt) {
     const a = CharacterSprite.step(b, dt), r = b.r * 0.85, def = b.def, w = a.moving;
     const walk = Math.sin(a.phase), breathe = Math.sin(t * 2.6 + b.uid);
     const lift = Math.abs(walk) * r * 0.22 * w;                          // 걸을 때 통통 튐
@@ -66,12 +67,22 @@ export class CharacterSprite {
       ctx.fillRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.strokeRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.restore(); }
     ctx.restore();
     if (team && back) CharacterSprite.facing(ctx, team, ang, r, gy);
-    if (team && front) { CharacterSprite.ring(ctx, team, r, gy, 0, Math.PI); CharacterSprite.facing(ctx, team, ang, r, gy); }
     ctx.restore();
   }
-  // 팀 색 고리 (start~end 호). front일 땐 앞쪽 반원만 몸통 위에 한 번 더
-  static ring(ctx, team, r, gy, start, end) {
+  // 팀 색 고리 (start~end 호). outline이면 어두운 테두리(약 1.5px)를 먼저 깔아 초록 수풀 위에서도 또렷하게
+  static ring(ctx, team, r, gy, start, end, outline = false) {
+    if (outline) { ctx.strokeStyle = CharacterSprite.RING_OUTLINE; ctx.lineWidth = 6.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, start, end); ctx.stroke(); }
     ctx.strokeStyle = team; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, start, end); ctx.stroke();
+  }
+  // 수풀 속 나/아군: 몸통만 반투명, 팀 고리·화살표는 불투명 + 테두리. 고리 뒤쪽 반원은 몸통 아래, 앞쪽 반원과 화살표는 몸통 위.
+  // 레이어에는 고리를 넣지 않으므로 반투명 도형끼리 겹치지 않음 (보라 삼각형 방지)
+  static drawInBush(ctx, b, team, t, alpha) {
+    const r = b.r * 0.85, gy = r * 0.95, aim = b.aim || { x: 0, y: -1 }, ang = Math.atan2(aim.y, aim.x);
+    ctx.save(); ctx.translate(b.x, b.y); CharacterSprite.ring(ctx, team, r, gy, Math.PI, Math.PI * 2, true); ctx.restore();
+    CharacterSprite.drawFaded(ctx, b, null, t, 0, alpha);
+    ctx.save(); ctx.translate(b.x, b.y); CharacterSprite.ring(ctx, team, r, gy, 0, Math.PI, true);
+    ctx.strokeStyle = CharacterSprite.RING_OUTLINE; ctx.lineWidth = 3; CharacterSprite.facing(ctx, team, ang, r, gy); ctx.stroke(); CharacterSprite.facing(ctx, team, ang, r, gy);
+    ctx.restore();
   }
   // 바라보는 방향 화살표 (팀 색, 고리 위)
   static facing(ctx, team, ang, r, gy) {
@@ -81,13 +92,13 @@ export class CharacterSprite {
   }
   // 반투명(수풀·흐림)으로 그릴 때: 한 장으로 그린 뒤 통째로 투명도를 줘서 몸통 아래 고리/화살표가 비쳐 섞이지 않게
   static layer = null;
-  static drawFaded(ctx, b, team, t, dt, alpha, front = false) {
+  static drawFaded(ctx, b, team, t, dt, alpha) {
     const m = ctx.getTransform(), s = Math.hypot(m.a, m.b), S = Math.ceil(b.r * 5 * s);
     const L = CharacterSprite.layer ||= document.createElement('canvas');
     if (L.width < S) L.width = L.height = S;
     const c = L.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, S, S);
     c.setTransform(s, 0, 0, s, S / 2 - b.x * s, S / 2 - b.y * s);
-    CharacterSprite.draw(c, b, team, t, dt, front);
+    CharacterSprite.draw(c, b, team, t, dt);
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha;
     ctx.drawImage(L, 0, 0, S, S, m.a * b.x + m.c * b.y + m.e - S / 2, m.b * b.x + m.d * b.y + m.f - S / 2, S, S); ctx.restore();
   }

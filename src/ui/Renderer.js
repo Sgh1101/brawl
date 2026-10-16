@@ -51,8 +51,8 @@ export class Renderer {
       else CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
     }
     walls(1);
-    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (팀 고리 앞쪽·화살표는 몸통 위에 얹어 수풀 속에서도 보이게) (적은 위 규칙대로 숨김/드러남)
-    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, 0, Renderer.BUSH_ALLY_ALPHA, true);
+    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (몸통만 반투명, 팀 고리는 불투명 + 테두리) (적은 위 규칙대로 숨김/드러남)
+    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.drawInBush(ctx, b, Renderer.teamColor(b, p), m.time, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
