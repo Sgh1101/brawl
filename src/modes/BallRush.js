@@ -107,6 +107,8 @@ export class BallRush {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1206'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ball.x, ball.y, R, 0, 7); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#1a1206'; ctx.beginPath(); ctx.arc(ball.x, ball.y, R * 0.38, 0, 7); ctx.fill();
   }
+  // 결과 화면에 보일 최종 점수 (HUD와 같은 순서: 우리 팀 : 상대)
+  resultSummary() { const mine = this.m.player.team, theirs = mine === 'blue' ? 'red' : 'blue'; return `${this.score[mine]} : ${this.score[theirs]}`; }
   // 위쪽 점수판: 우리 팀 골 : 상대 골 + 시계, 골 직후 "골!"
   board(ctx, W, m, clock, txt) {
     const bw = Math.min(300, W - 24), x0 = W / 2 - bw / 2, mine = m.player.team, theirs = mine === 'blue' ? 'red' : 'blue';
