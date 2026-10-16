@@ -51,8 +51,8 @@ export class Renderer {
       else CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
     }
     walls(1);
-    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (적은 위 규칙대로 숨김/드러남)
-    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, 0, Renderer.BUSH_ALLY_ALPHA);
+    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (몸통만 반투명, 팀 고리는 불투명 + 테두리) (적은 위 규칙대로 숨김/드러남)
+    for (const b of shown) if (b.team === p.team && Renderer.touchesBush(a, b)) CharacterSprite.drawInBush(ctx, b, Renderer.teamColor(b, p), m.time, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
@@ -88,6 +88,13 @@ export class Renderer {
   }
   static CARRIER_GLOW = 4;
   static BUSH_ALLY_ALPHA = 0.5;
+  // 캐릭터(몸통~팀 고리 아래끝)가 수풀 칸에 조금이라도 걸치면 true. 수풀 그림은 칸보다 4px 넓게 그려지므로 그만큼 여유.
+  // 중심이 수풀 밖인 가장자리에서도 수풀이 고리를 덮으니 다시 그려야 함
+  static touchesBush(a, b) {
+    const T = a.T, m = 4, x0 = b.x - b.r - m, x1 = b.x + b.r + m, y0 = b.y - b.r * 1.2 - m, y1 = b.y + b.r * 1.25 + m;
+    for (let y = Math.floor(y0 / T) * T; y <= y1; y += T) for (let x = Math.floor(x0 / T) * T; x <= x1; x += T) if (a.bushAt(x + 1, y + 1)) return true;
+    return false;
+  }
   // 광산이 화면 밖이면 화면 가장자리(점수판 아래)에 방향 표시 + 젬 아이콘
   static mineArrow(ctx, cam, mine, t) {
     const W = innerWidth, H = innerHeight, sx = W / 2 + (mine.x - cam.x) * cam.s, sy = cam.cy + (mine.y - cam.y) * cam.s;
