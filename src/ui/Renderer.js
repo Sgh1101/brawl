@@ -1,6 +1,7 @@
 import { BrawlerArt } from './BrawlerArt.js';
 
-const TEAM = { blue: '#2f7bff', red: '#ff3b3b' };
+// 색 규칙: 내 캐릭터 초록, 아군 파랑, 적 빨강. 보라는 젬 전용.
+export const COLORS = { me: '#3dff6e', ally: '#2f7bff', enemy: '#ff3b3b' };
 export class Renderer {
   constructor(canvas) { this.c = canvas; this.ctx = canvas.getContext('2d'); this.cam = { x: 0, y: 0, s: 1 }; }
   resize() { const d = devicePixelRatio || 1; this.c.width = innerWidth * d; this.c.height = innerHeight * d; this.dpr = d; }
@@ -35,10 +36,10 @@ export class Renderer {
       const inBush = a.bushAt(b.x, b.y);
       ctx.globalAlpha = inBush ? 0.55 : 1;
       ctx.fillStyle = '#0003'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 18, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
-      BrawlerArt.draw(ctx, b.def, b.x, b.y, b.r * 0.85, b.aim, b === p ? '#3dff6e' : TEAM[b.team]);
+      BrawlerArt.draw(ctx, b.def, b.x, b.y, b.r * 0.85, b.aim, Renderer.teamColor(b, p));
       if (b.flash > 0) { ctx.fillStyle = '#fff8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); }
       ctx.globalAlpha = 1;
-      Renderer.bars(ctx, b, b === p ? '#3dff6e' : TEAM[b.team], lift.get(b));
+      Renderer.bars(ctx, b, Renderer.teamColor(b, p), lift.get(b));
     }
     walls(1);
     for (const pr of m.weapons.projectiles) {
@@ -50,6 +51,7 @@ export class Renderer {
     for (const bl of m.weapons.blasts) { ctx.fillStyle = bl.color + '66'; ctx.beginPath(); ctx.arc(bl.x, bl.y, bl.r, 0, 7); ctx.fill(); }
     ctx.restore();
   }
+  static teamColor(b, p) { return b === p ? COLORS.me : b.team === p.team ? COLORS.ally : COLORS.enemy; }
   static aimLine(ctx, p, dir) {
     const a = p.def.attack; ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#fff';
     if (a.type === 'lob') { const pw = dir.power ?? 1; ctx.beginPath(); ctx.arc(p.x + dir.x * a.range * pw, p.y + dir.y * a.range * pw, a.radius, 0, 7); ctx.fill(); }

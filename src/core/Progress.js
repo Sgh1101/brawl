@@ -8,7 +8,7 @@ export class Progress {
     const d = Storage.load();
     d.brawlerTrophies ??= {}; d.claimed ??= []; d.matches ??= 0;
     if (d.trophies && !Object.keys(d.brawlerTrophies).length) d.brawlerTrophies[Brawlers.STARTERS[0]] = d.trophies; // v1 세이브 이전
-    d.best = d.best; // 최고 기록 트로피: 해금 기준 (옛 세이브는 현재 총합으로 이전)
+    d.best = Math.max(d.best || 0, Progress.total(d)); // 최고 기록 트로피: 해금 기준 (옛 세이브는 현재 총합으로 이전)
     return d;
   }
   static trophiesOf(d, id) { return d.brawlerTrophies[id] || 0; }

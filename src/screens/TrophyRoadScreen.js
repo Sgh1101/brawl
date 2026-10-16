@@ -22,6 +22,7 @@ export class TrophyRoadScreen {
     const el = ScreenManager.el(`<div class="screen road">
       <div class="topbar"><button class="btn blue bounce" id="back">◀ 홈</button>
         <h2 class="stroke">트로피 로드</h2><div class="pill trophy">🏆 <b>${total}</b></div><div class="pill trophy">⭐ 최고 <b>${d.best}</b></div></div>
+      <div class="basis stroke">총 트로피 기준</div>
       <div class="track"><div class="bar"><i style="width:${Math.min(100, fill / ms.length * 100)}%"></i></div>
         <div class="nodes">${TrophyRoad.milestones.map(node).join('')}</div></div></div>`);
     root.appendChild(el);

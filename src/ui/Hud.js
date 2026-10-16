@@ -1,4 +1,4 @@
-import { Renderer } from './Renderer.js';
+import { Renderer, COLORS } from './Renderer.js';
 
 export class Hud {
   static draw(ctx, m, input) {
@@ -6,7 +6,7 @@ export class Hud {
     ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#000';
     const txt = (t, x, y, size, col = '#fff') => { ctx.font = `900 ${size}px sans-serif`; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y); };
     const mm = Math.floor(m.timeLeft / 60), ss = String(Math.floor(m.timeLeft % 60)).padStart(2, '0');
-    Hud.gemBoard(ctx, W, mode, `${mm}:${ss}`, txt);
+    Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
     Hud.intro(ctx, m, txt);
     if (mode.countdown !== null) txt(`${mode.leader === m.player.team ? '승리까지' : '패배까지'} ${Math.ceil(mode.countdown)}`, W / 2, 96, 28, mode.leader === m.player.team ? '#7dff9a' : '#ff6b6b');
     if (m.player.dead) txt(`부활 ${Math.ceil(m.player.respawnT)}`, W / 2, innerHeight / 2, 40);
@@ -25,12 +25,15 @@ export class Hud {
     }
   }
   // 위쪽 젬 점수판: 팀별 젬 수를 크게 + 목표(10) 막대
-  static gemBoard(ctx, W, mode, clock, txt) {
+  static gemBoard(ctx, W, m, clock, txt) {
+    const mode = m.mode;
     const G = mode.constructor.GOAL, bw = Math.min(440, W - 24), x0 = W / 2 - bw / 2;
     ctx.fillStyle = '#000a'; ctx.beginPath(); ctx.roundRect(x0, 6, bw, 70, 16); ctx.fill();
     txt(clock, W / 2, 34, 22);
-    for (const [team, side, col] of [['blue', -1, '#5aa0ff'], ['red', 1, '#ff6b6b']]) {
+    const mine = m.player.team, theirs = mine === 'blue' ? 'red' : 'blue';
+    for (const [team, side, col, bg] of [[mine, -1, '#7fb6ff', COLORS.ally], [theirs, 1, '#ff8a8a', COLORS.enemy]]) {
       const n = mode.teamGems(team), cx = W / 2 + side * bw * 0.3;
+      ctx.fillStyle = bg + '99'; ctx.beginPath(); ctx.roundRect(side < 0 ? x0 + 4 : W / 2 + bw * 0.1, 10, bw * 0.4 - 4, 62, 12); ctx.fill();
       Renderer.gem(ctx, cx - 30, 38, 16, true); txt(n, cx + 12, 52, 40, col);
       const barW = bw * 0.36, bx = W / 2 + (side < 0 ? -bw * 0.48 : bw * 0.12);
       ctx.fillStyle = '#ffffff22'; ctx.fillRect(bx, 66, barW, 5); ctx.fillStyle = col; ctx.fillRect(bx, 66, barW * Math.min(1, n / G), 5);
