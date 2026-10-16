@@ -1,4 +1,4 @@
-import { BrawlerArt } from './BrawlerArt.js';
+import { CharacterSprite } from './CharacterSprite.js';
 
 // 색 규칙: 내 캐릭터 초록, 아군 파랑, 적 빨강. 보라는 젬 전용.
 export const COLORS = { me: '#3dff6e', ally: '#2f7bff', enemy: '#ff3b3b' };
@@ -17,6 +17,7 @@ export class Renderer {
     return { x: a.w < W / s ? a.w / 2 : x, y, s, cy };
   }
   draw(m, input) {
+    this.frameDt = Math.max(0, Math.min(0.05, m.time - (this.lastT ?? m.time))); this.lastT = m.time;
     const ctx = this.ctx, a = m.arena, T = a.T, p = m.player;
     this.cam = Renderer.camera(p, a, T, m.mode.focus ?? a.mine); const s = this.cam.s;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -46,9 +47,7 @@ export class Renderer {
     for (const b of shown) {
       const inBush = a.bushAt(b.x, b.y), ghost = !m.visibleTo(b, p);
       ctx.globalAlpha = ghost ? 0.3 : inBush ? 0.55 : 1;
-      ctx.fillStyle = '#0003'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 18, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
-      BrawlerArt.draw(ctx, b.def, b.x, b.y, b.r * 0.85, b.aim, Renderer.teamColor(b, p));
-      if (b.flash > 0) { ctx.fillStyle = '#fff8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); }
+      CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
       ctx.globalAlpha = 1;
     }
     walls(1);
