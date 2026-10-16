@@ -7,6 +7,7 @@ export class Progress {
   static load() {
     const d = Storage.load();
     d.brawlerTrophies ??= {}; d.claimed ??= []; d.matches ??= 0;
+    d.tutorialDone ??= d.matches > 0; // 이미 판을 해 본 세이브는 튜토리얼 완료로 봄
     if (d.trophies && !Object.keys(d.brawlerTrophies).length) d.brawlerTrophies[Brawlers.STARTERS[0]] = d.trophies; // v1 세이브 이전
     d.best = Math.max(d.best || 0, Progress.total(d)); // 최고 기록 트로피: 해금 기준 (옛 세이브는 현재 총합으로 이전)
     return d;
@@ -35,6 +36,7 @@ export class Progress {
   }
   // 처음 몇 판은 봇이 덜 공격적 (Bot.EASY_MATCHES 판까지)
   static matchesPlayed() { return Progress.load().matches; }
+  static completeTutorial() { const d = Progress.load(); d.tutorialDone = true; Storage.save(d); }
   static claim(at) {
     const d = Progress.load(), m = TrophyRoad.milestones.find(x => x.at === at);
     if (!m || d.claimed.includes(at) || d.best < at) return false;

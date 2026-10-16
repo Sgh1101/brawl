@@ -19,7 +19,8 @@ export class Input {
     return { move: { x: s * 0.22, y: h - s * 0.24 }, aim: { x: w - s * 0.24, y: h - s * 0.24 }, sup: { x: w - s * 0.48, y: h - s * 0.14 }, R: s * 0.13 }; }
   down(e) {
     if (e.pointerType === 'touch') this.touch = true;
-    if (!this.touch) { this.mouse.down = true; this.mouse.x = e.clientX; this.mouse.y = e.clientY; return; }
+    if (!this.touch) { // 짧은 클릭(다음 프레임 전에 뗌)도 한 발은 나가게 이벤트로도 넣음
+      this.mouse.down = true; this.mouse.x = e.clientX; this.mouse.y = e.clientY; this.events.push({ type: 'fire', click: true }); return; }
     const L = this.layout();
     if (Math.hypot(e.clientX - L.sup.x, e.clientY - L.sup.y) < L.R * 0.8) { this.events.push({ type: 'super' }); return; }
     const key = e.clientX < innerWidth / 2 ? 'move' : 'aim';

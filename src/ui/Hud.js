@@ -6,9 +6,12 @@ export class Hud {
     ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#000';
     const txt = (t, x, y, size, col = '#fff') => { ctx.font = `900 ${size}px sans-serif`; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y); };
     const mm = Math.floor(m.timeLeft / 60), ss = String(Math.floor(m.timeLeft % 60)).padStart(2, '0');
-    Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
-    Hud.intro(ctx, m, txt); Hud.tip(ctx, m, txt);
-    if (mode.countdown !== null) txt(`${mode.leader === m.player.team ? '승리까지' : '패배까지'} ${Math.ceil(mode.countdown)}`, W / 2, 96, 28, mode.leader === m.player.team ? '#7dff9a' : '#ff6b6b');
+    if (mode.tutorial) mode.drawHud(ctx, input.touch, txt);
+    else {
+      Hud.gemBoard(ctx, W, m, `${mm}:${ss}`, txt);
+      Hud.intro(ctx, m, txt); Hud.tip(ctx, m, txt); Hud.killFeed(ctx, m);
+      if (mode.countdown !== null) Hud.countdown(ctx, m, txt);
+    }
     if (m.player.dead) txt(`부활 ${Math.ceil(m.player.respawnT)}`, W / 2, innerHeight / 2, 40);
     const p = m.player;
     if (input.touch) {
@@ -23,6 +26,29 @@ export class Hud {
       ctx.font = '600 13px sans-serif'; ctx.fillStyle = '#fffa'; ctx.textAlign = 'left';
       ctx.fillText('WASD 이동 · 클릭 공격 · E 슈퍼', 12, innerHeight - 14);
     }
+  }
+  // 승리/패배 카운트다운: 지고 있을 땐 크게 + 맥박
+  static countdown(ctx, m, txt) {
+    const win = m.mode.leader === m.player.team, n = Math.ceil(m.mode.countdown);
+    if (win) return txt(`승리까지 ${n}`, innerWidth / 2, 104, 28, '#7dff9a');
+    const size = 52 + Math.max(0, Math.sin(m.time * 8)) * 8;
+    txt(`패배까지 ${n}`, innerWidth / 2, 124, size, '#ff4d4d');
+  }
+  // 처치 알림: 오른쪽 위, 최근 3개, 4초
+  static FEED_SEC = 4;
+  static killFeed(ctx, m) {
+    const items = m.feed.filter(f => m.time - f.t < Hud.FEED_SEC).slice(-3), p = m.player;
+    const col = b => b === p ? COLORS.me : b.team === p.team ? COLORS.ally : COLORS.enemy;
+    ctx.font = '800 14px sans-serif'; ctx.textAlign = 'right';
+    items.forEach((f, i) => {
+      const y = Renderer.HUD_TOP + 22 + i * 24, x = innerWidth - 12, v = f.victim.def.name, k = f.killer.def.name;
+      const wv = ctx.measureText(v).width, wk = ctx.measureText(k).width, w = wv + wk + 40;
+      ctx.fillStyle = '#000a'; ctx.beginPath(); ctx.roundRect(x - w - 6, y - 16, w + 12, 22, 8); ctx.fill();
+      ctx.fillStyle = col(f.victim); ctx.fillText(v, x, y);
+      ctx.fillStyle = '#fff'; ctx.fillText('💥', x - wv - 6, y);
+      ctx.fillStyle = col(f.killer); ctx.fillText(k, x - wv - 32, y);
+    });
+    ctx.textAlign = 'center';
   }
   // 위쪽 젬 점수판: 팀별 젬 수를 크게 + 목표(10) 막대
   static gemBoard(ctx, W, m, clock, txt) {
@@ -57,6 +83,7 @@ export class Hud {
     const p = m.player; m.tips ??= { shown: new Set(), text: null, until: 0 };
     const t = m.tips, show = (key, text) => { if (!t.shown.has(key)) { t.shown.add(key); t.text = text; t.until = m.time + Hud.TIP_SEC; } };
     if (p.dead) show('death', '죽으면 젬을 떨어뜨려요');
+    else if (p.superReady) show('superReady', `궁극기 준비! ${p.def.superDesc} — ${Hud.superKey()}`);
     else if (p.superCharge > 0 && m.time > Hud.INTRO) show('super', '적을 맞히면 궁극기가 차요');
     if (!t.text || m.time > t.until) return;
     const W = innerWidth, y = Renderer.HUD_TOP + 90, size = Math.max(16, Math.min(26, W / 32));
@@ -65,9 +92,15 @@ export class Hud {
     ctx.fillStyle = '#000b'; ctx.beginPath(); ctx.roundRect(W / 2 - w / 2, y - size * 1.1, w, size * 1.7, 12); ctx.fill();
     txt('💡 ' + t.text, W / 2, y + size * 0.15, size, '#ffe28a'); ctx.restore();
   }
+  static superKey() { return matchMedia('(pointer: coarse)').matches ? '번개 버튼' : 'E 키'; }
   // 슈퍼 버튼: 번개 아이콘 + 충전 고리. 충전 전에도 아이콘이 흐리게 보임
   static superBtn(ctx, x, y, r, p, txt) {
     const ready = p.superReady, c = Math.min(1, p.superCharge || 0);
+    if (ready) { // 찼을 때 빛나는 고리
+      const t = performance.now() / 1000, glow = 0.5 + 0.5 * Math.sin(t * 6);
+      ctx.save(); ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 18 + glow * 22; ctx.strokeStyle = `rgba(255,210,63,${0.6 + glow * 0.4})`;
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, r + 6 + glow * 4, 0, 7); ctx.stroke(); ctx.restore();
+    }
     ctx.fillStyle = ready ? '#ffb000' : '#1b1b2acc'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     ctx.strokeStyle = '#ffffff33'; ctx.lineWidth = r * 0.16; ctx.beginPath(); ctx.arc(x, y, r * 0.88, 0, 7); ctx.stroke();
     ctx.strokeStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(x, y, r * 0.88, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * c); ctx.stroke();

@@ -23,7 +23,27 @@ export class Maps {
     ],
     center: '#.........G.........#',
   };
+  // 연습장(전체를 그대로 적음): M 이동 목표, D 허수아비, b 플레이어 스폰
+  static practice = {
+    id: 'practice', name: 'Practice',
+    rows: [
+      '###############',
+      '#.............#',
+      '#.............#',
+      '#......D......#',
+      '#.............#',
+      '#.............#',
+      '#....BB.......#',
+      '#.............#',
+      '#..........M..#',
+      '#.............#',
+      '#......b......#',
+      '#.............#',
+      '###############',
+    ],
+  };
   static build(def) {
+    if (def.rows) return [...def.rows];
     const swap = r => r.replace(/r/g, 'b');
     return [...def.half, def.center, ...def.half.slice().reverse().map(swap)];
   }

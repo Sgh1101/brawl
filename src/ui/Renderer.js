@@ -7,25 +7,26 @@ export class Renderer {
   resize() { const d = devicePixelRatio || 1; this.c.width = innerWidth * d; this.c.height = innerHeight * d; this.dpr = d; }
   toWorld(sx, sy) { const { x, y, s, cy } = this.cam; return { x: (sx - innerWidth / 2) / s + x, y: (sy - cy) / s + y }; }
   static HUD_TOP = 80; // 위 점수판 높이: 화면 중심을 그만큼 아래로 내려 맵이 점수판에 덜 가리게
-  // 카메라: 짧은 가로 화면에선 세로로 9칸 이상 보이게 줌아웃. 플레이어를 화면 안에 두면서 젬 광산 쪽으로 당김.
-  static camera(p, a, T) {
+  // 카메라: 짧은 가로 화면에선 세로로 9칸 이상 보이게 줌아웃. 플레이어를 화면 안에 두면서 focus(젬 광산, 연습장에선 현재 목표) 쪽으로 당김.
+  static camera(p, a, T, focus = a.mine) {
     const W = innerWidth, H = innerHeight, s = Math.min(W / (15 * T), H / (9 * T)), cy = (H + Renderer.HUD_TOP) / 2;
     const viewUp = (cy - Renderer.HUD_TOP) / s, viewDown = (H - cy) / s, margin = 70;
-    const pull = Math.max(-(viewDown - margin), Math.min(viewUp - margin, (a.mine.y - p.y) * 0.5));
+    const pull = Math.max(-(viewDown - margin), Math.min(viewUp - margin, (focus ? focus.y - p.y : 0) * 0.5));
     const y = Math.max(viewUp, Math.min(a.h - viewDown, p.y + pull));
     const x = Math.max(W / 2 / s, Math.min(a.w - W / 2 / s, p.x));
     return { x: a.w < W / s ? a.w / 2 : x, y, s, cy };
   }
   draw(m, input) {
     const ctx = this.ctx, a = m.arena, T = a.T, p = m.player;
-    this.cam = Renderer.camera(p, a, T); const s = this.cam.s;
+    this.cam = Renderer.camera(p, a, T, m.mode.focus ?? a.mine); const s = this.cam.s;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.fillStyle = '#16233f'; ctx.fillRect(0, 0, innerWidth, innerHeight);
     ctx.save(); ctx.translate(innerWidth / 2, this.cam.cy); ctx.scale(s, s); ctx.translate(-this.cam.x, -this.cam.y);
     // 바닥
     for (let y = 0; y < a.rows; y++) for (let x = 0; x < a.cols; x++) {
       ctx.fillStyle = (x + y) % 2 ? '#e8c27a' : '#e2b96c'; ctx.fillRect(x * T, y * T, T, T); }
-    Renderer.mine(ctx, a.mine, T, m.time, m.mode);
+    if (a.mine) Renderer.mine(ctx, a.mine, T, m.time, m.mode);
+    m.mode.drawWorld?.(ctx);
     for (const g of m.mode.gems) Renderer.gem(ctx, g.x, g.y + Math.sin(m.time * 4 + g.x) * 2, 15, true);
     const walls = (pass) => { for (let y = 0; y < a.rows; y++) for (let x = 0; x < a.cols; x++) {
       const c = a.grid[y][x];
@@ -51,7 +52,7 @@ export class Renderer {
       ctx.globalAlpha = 1;
     }
     walls(1);
-    Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
+    if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
       ctx.globalAlpha = m.visibleTo(b, p) ? 1 : 0.5; Renderer.bars(ctx, b, Renderer.teamColor(b, p), lift.get(b), b.team !== p.team); }
@@ -64,7 +65,7 @@ export class Renderer {
     }
     for (const bl of m.weapons.blasts) { ctx.fillStyle = bl.color + '66'; ctx.beginPath(); ctx.arc(bl.x, bl.y, bl.r, 0, 7); ctx.fill(); }
     ctx.restore();
-    Renderer.mineArrow(ctx, this.cam, a.mine, m.time);
+    if (a.mine) Renderer.mineArrow(ctx, this.cam, a.mine, m.time);
   }
   static teamColor(b, p) { return b === p ? COLORS.me : b.team === p.team ? COLORS.ally : COLORS.enemy; }
   static aimLine(ctx, p, dir) {
