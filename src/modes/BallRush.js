@@ -4,8 +4,8 @@ import { COLORS } from '../ui/Renderer.js';
 // 볼 러시 (3대3 공차기): 가운데 공을 주워 상대 골대에 넣기. 2골 먼저 넣으면 승리, 시간이 끝나면 골 많은 팀 승리(같으면 무승부).
 // 맵의 U = 위쪽 골대(파랑 팀 골대, 빨강이 넣는 곳), D = 아래쪽 골대(빨강 팀 골대), O = 공 시작 위치.
 export class BallRush {
-  static GOAL = 2; static BALL_R = 12; static KICK = 700; static FRICTION = 1.6; static PAUSE = 2; static REPICK = 0.4;
-  static HOLD = Object.freeze({ x: 0, y: 0 }); // botControl: 제자리 지키기 (null이면 평소 전투 AI로 넘김)
+  static GOAL = 2; static BALL_R = 12; static KICK = 700; static KICK_DIST = 170; static FRICTION = BallRush.KICK / BallRush.KICK_DIST; static PAUSE = 2; static REPICK = 0.4;
+  // FRICTION: 속도가 매초 FRICTION 비율로 줄어 찬 공은 약 KICK / FRICTION = KICK_DIST(170px) 가고 멈춤
   static INTRO_TEXT = ['공을 주워 상대 골대에 넣어!', '공 들고 공격 = 차기 · 2골 먼저 넣으면 승리'];
   static DEATH_TIP = '죽으면 공을 떨어뜨려요';
   constructor(match) {
@@ -68,19 +68,14 @@ export class BallRush {
     if (this.m.timeLeft <= 0 && this.goalAt === null) return this.score.blue > this.score.red ? 'blue' : this.score.red > this.score.blue ? 'red' : 'draw';
     return null;
   }
-  // 봇: 가운데 스폰 봇은 골키퍼(우리 팀이 공을 안 들었을 때 골대 앞을 지킴). 공 들었으면 상대 골대로 달리다 가까우면 차기, 공이 떨어져 있으면 팀에서 가장 가까운 한 명이 주우러 감, 상대가 공을 들면 사거리까지 다가감. 그 밖엔 평소처럼 싸움(공 근처로)
+  // 봇: 공 들었으면 상대 골대로 달리다 가까우면 차기, 공이 떨어져 있으면 팀에서 가장 가까운 한 명이 주우러 감, 상대가 공을 들면 사거리까지 다가감. 그 밖엔 평소처럼 싸움(공 근처로)
   botControl(b) {
     const m = this.m, ball = this.ball;
     if (this.goalAt !== null) return null;
     if (ball.carrier === b) {
       const g = BallRush.targetGoal(this, b.team), d = Vec.dist(b, g);
-      if (d < 260 && m.arena.lineClear(b, g)) m.weapons.attack(b, Vec.norm(g.x - b.x, g.y - b.y));
+      if (d < BallRush.KICK_DIST && m.arena.lineClear(b, g)) m.weapons.attack(b, Vec.norm(g.x - b.x, g.y - b.y));
       return Vec.norm(g.x - b.x, g.y - b.y);
-    }
-    if (b.spawn === m.arena.spawns[b.team][1] && ball.carrier?.team !== b.team) { // 가운데 스폰 봇은 골키퍼: 우리 골대 앞에서 공 쪽 x를 따라감
-      const own = BallRush.targetGoal(this, b.team === 'blue' ? 'red' : 'blue'), g = this.goals.U, half = (g[g.length - 1].x - g[0].x) / 2;
-      const post = { x: Math.max(own.x - half, Math.min(own.x + half, ball.x)), y: own.y + (b.team === 'blue' ? 1 : -1) * m.arena.T * 1.5 };
-      const d = Vec.dist(b, post); return d > 16 ? Vec.norm(post.x - b.x, post.y - b.y) : BallRush.HOLD;
     }
     if (ball.carrier && ball.carrier.team !== b.team && Vec.dist(b, ball.carrier) > b.def.attack.range * 0.8) return Vec.norm(ball.carrier.x - b.x, ball.carrier.y - b.y); // 상대가 공을 들면 막으러 감
     if (!ball.carrier) {
