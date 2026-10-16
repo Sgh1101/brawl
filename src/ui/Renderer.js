@@ -46,15 +46,13 @@ export class Renderer {
     const shown = m.brawlers.filter(b => !b.dead && (m.visibleTo(b, p) || b.gems >= Renderer.CARRIER_GLOW)), lift = Renderer.labelLift(shown);
     for (const b of shown) {
       const inBush = a.bushAt(b.x, b.y), ghost = !m.visibleTo(b, p);
-      ctx.globalAlpha = ghost ? 0.3 : inBush ? 0.55 : 1;
-      CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
-      ctx.globalAlpha = 1;
+      const alpha = ghost ? 0.3 : inBush ? 0.55 : 1;
+      if (alpha < 1) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt, alpha);
+      else CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
     }
     walls(1);
     // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (적은 위 규칙대로 숨김/드러남)
-    ctx.globalAlpha = Renderer.BUSH_ALLY_ALPHA;
-    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, 0);
-    ctx.globalAlpha = 1;
+    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, 0, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)

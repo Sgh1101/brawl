@@ -4,7 +4,6 @@ import { BrawlerArt } from './BrawlerArt.js';
 // 그림만 다루고 게임 상태는 바꾸지 않음. 걷기 위상은 렌더 전용으로 WeakMap에 보관.
 export class CharacterSprite {
   static OUTLINE = '#1a1206';
-  static FLASH_SEC = 0.1; // 맞았을 때 흰색 번쩍임 (Brawler.flash 0.12에서 줄어드는 동안 마지막 0.1초)
   static anim = new WeakMap();
   static step(b, dt) {
     const a = CharacterSprite.anim.get(b) || { phase: 0, moving: 0 };
@@ -31,17 +30,17 @@ export class CharacterSprite {
     g.addColorStop(0, `rgba(0,0,0,${0.38 * k})`); g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.25 * (0.8 + 0.2 * k), r * 0.5, 0, 0, 7); ctx.fill();
     // 팀 색 고리 (그림자 위) + 바라보는 방향 표시
-    ctx.strokeStyle = team; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, 0, 7); ctx.stroke();
-    ctx.fillStyle = team; ctx.beginPath();
-    const fx = Math.cos(ang) * r * 1.45, fy = gy + Math.sin(ang) * r * 0.6;
-    ctx.moveTo(fx, fy); ctx.lineTo(Math.cos(ang + 0.35) * r * 1.1, gy + Math.sin(ang + 0.35) * r * 0.43);
-    ctx.lineTo(Math.cos(ang - 0.35) * r * 1.1, gy + Math.sin(ang - 0.35) * r * 0.43); ctx.closePath(); ctx.fill();
+    // 위를 볼 때는 화살표가 몸통 뒤에 가려지므로 몸통 다음에 그림
+    const back = aim.y < 0;
+    if (team) { ctx.strokeStyle = team; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, 0, 7); ctx.stroke();
+      if (!back) CharacterSprite.facing(ctx, team, ang, r, gy); }
     // 발: 걸을 때 앞뒤로 엇갈림
     for (const s of [-1, 1]) {
       const swing = walk * s * r * 0.28 * w, fxp = s * r * 0.42 + Math.cos(ang) * swing, fyp = gy - r * 0.12 + Math.sin(ang) * swing * 0.5;
       ctx.fillStyle = CharacterSprite.shade(def.color, -0.55); ctx.strokeStyle = CharacterSprite.OUTLINE; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.ellipse(fxp, fyp - Math.max(0, walk * s) * r * 0.15 * w, r * 0.26, r * 0.17, 0, 0, 7); ctx.fill(); ctx.stroke();
     }
+    ctx.save();
     // 몸통: 위로 띄우고 눌림/늘어남 (발바닥 기준)
     ctx.translate(0, -lift - r * 0.15); ctx.translate(0, r); ctx.scale(sx, sy); ctx.translate(0, -r);
     const body = ctx.createLinearGradient(0, -r * 1.2, 0, r * 1.1);
@@ -51,7 +50,7 @@ export class CharacterSprite {
     // 위쪽 초승달 하이라이트 (빛은 위에서)
     ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = r * 0.2; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.arc(0, r * 0.35, r * 1.15, Math.PI * 1.22, Math.PI * 1.62); ctx.stroke();
-    if (b.flash > 0 && b.flash <= CharacterSprite.FLASH_SEC) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(-r * 2, -r * 2, r * 4, r * 4); }
+    if (b.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(-r * 2, -r * 2, r * 4, r * 4); }
     ctx.restore();
     BrawlerArt.shapePath(ctx, def.shape, r); ctx.strokeStyle = CharacterSprite.OUTLINE; ctx.lineWidth = 3.5; ctx.stroke();
     if (def.shape === 'leaf') { ctx.strokeStyle = '#2d6a1e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r * 0.9); ctx.stroke(); }
@@ -66,5 +65,30 @@ export class CharacterSprite {
     if (def.shape === 'hex') { ctx.save(); ctx.rotate(ang + Math.PI / 2); ctx.fillStyle = '#333'; ctx.strokeStyle = CharacterSprite.OUTLINE; ctx.lineWidth = 2;
       ctx.fillRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.strokeRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.restore(); }
     ctx.restore();
+    if (team && back) CharacterSprite.facing(ctx, team, ang, r, gy);
+    ctx.restore();
+  }
+  // 바라보는 방향 화살표 (팀 색, 고리 위)
+  static facing(ctx, team, ang, r, gy) {
+    ctx.fillStyle = team; ctx.beginPath();
+    ctx.moveTo(Math.cos(ang) * r * 1.45, gy + Math.sin(ang) * r * 0.6); ctx.lineTo(Math.cos(ang + 0.35) * r * 1.1, gy + Math.sin(ang + 0.35) * r * 0.43);
+    ctx.lineTo(Math.cos(ang - 0.35) * r * 1.1, gy + Math.sin(ang - 0.35) * r * 0.43); ctx.closePath(); ctx.fill();
+  }
+  // 반투명(수풀·흐림)으로 그릴 때: 한 장으로 그린 뒤 통째로 투명도를 줘서 몸통 아래 고리/화살표가 비쳐 섞이지 않게
+  static layer = null;
+  static drawFaded(ctx, b, team, t, dt, alpha) {
+    const m = ctx.getTransform(), s = Math.hypot(m.a, m.b), S = Math.ceil(b.r * 5 * s);
+    const L = CharacterSprite.layer ||= document.createElement('canvas');
+    if (L.width < S) L.width = L.height = S;
+    const c = L.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, S, S);
+    c.setTransform(s, 0, 0, s, S / 2 - b.x * s, S / 2 - b.y * s);
+    CharacterSprite.draw(c, b, team, t, dt);
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha;
+    ctx.drawImage(L, 0, 0, S, S, m.a * b.x + m.c * b.y + m.e - S / 2, m.b * b.x + m.d * b.y + m.f - S / 2, S, S); ctx.restore();
+  }
+  // 홈/트로피 로드 아이콘: 같은 그리기 경로, 팀 고리 없이. state를 넘기면 걷기/숨쉬기 상태가 이어짐
+  static icon(ctx, def, x, y, r, aim = { x: 0, y: -1 }, t = 0, dt = 0, state = {}) {
+    Object.assign(state, { def, x, y, r: r / 0.85, aim, vx: 0, vy: 0, flash: 0, uid: 0 });
+    CharacterSprite.draw(ctx, state, null, t, dt);
   }
 }
