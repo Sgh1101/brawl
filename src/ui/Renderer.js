@@ -51,6 +51,10 @@ export class Renderer {
       ctx.globalAlpha = 1;
     }
     walls(1);
+    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (적은 위 규칙대로 숨김/드러남)
+    ctx.globalAlpha = Renderer.BUSH_ALLY_ALPHA;
+    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, 0);
+    ctx.globalAlpha = 1;
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
@@ -85,6 +89,7 @@ export class Renderer {
     Renderer.gem(ctx, p.x, p.y, 13 + pulse * 2);
   }
   static CARRIER_GLOW = 4;
+  static BUSH_ALLY_ALPHA = 0.5;
   // 광산이 화면 밖이면 화면 가장자리(점수판 아래)에 방향 표시 + 젬 아이콘
   static mineArrow(ctx, cam, mine, t) {
     const W = innerWidth, H = innerHeight, sx = W / 2 + (mine.x - cam.x) * cam.s, sy = cam.cy + (mine.y - cam.y) * cam.s;
