@@ -57,8 +57,8 @@ export class Weapons {
       p.x += sx; p.y += sy; p.travelled += Math.hypot(sx, sy);
       if (p.travelled >= p.range) { p.dead = true; continue; }
       if (arena.solidAt(p.x, p.y)) {
-        if (p.breaks) arena.breakTile(Math.floor(p.x / arena.T), Math.floor(p.y / arena.T));
-        else { p.dead = true; continue; }
+        // 부서지는 벽(W)만 뚫고, # 벽·맵 테두리에서는 사라짐
+        if (!(p.breaks && arena.breakTile(Math.floor(p.x / arena.T), Math.floor(p.y / arena.T)))) { p.dead = true; continue; }
       }
       for (const e of m.brawlers) {
         if (e.team === p.team || e.dead || p.hit.has(e)) continue;

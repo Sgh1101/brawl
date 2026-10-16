@@ -19,19 +19,20 @@ class App {
   }
   goHome() { this.match = null; this.screens.show(HomeScreen); }
   startMatch(opts) { this.lastOpts = opts; this.match = new Match(opts); this.input.drain(); this.screens.show(null); }
-  aimDir() {
+  aimDir(isSuper = false) {
     const p = this.match.player, s = this.input.sticks.aim;
     if (s && s.mag > 0.25) return { x: s.dx, y: s.dy, power: s.mag };
     if (this.input.touch) return null;
     const w = this.renderer.toWorld(this.input.mouse.x, this.input.mouse.y);
-    const d = Vec.norm(w.x - p.x, w.y - p.y);
-    return { ...d, power: Math.min(1, Math.hypot(w.x - p.x, w.y - p.y) / (p.def.attack.range || 1)) };
+    const d = Vec.norm(w.x - p.x, w.y - p.y), range = (isSuper ? p.def.superAtk.range : p.def.attack.range) || 1;
+    return { ...d, power: Math.min(1, Math.hypot(w.x - p.x, w.y - p.y) / range) };
   }
-  autoAim() {
+  autoAim(isSuper = false) {
     const m = this.match, p = m.player;
     const t = m.brawlers.filter(e => e.team !== p.team && !e.dead && m.visibleTo(e, p)).sort((a, b) => Vec.dist(a, p) - Vec.dist(b, p))[0];
     if (!t) return { ...p.aim, power: 1 };
-    return { ...Vec.norm(t.x - p.x, t.y - p.y), power: Math.min(1, Vec.dist(t, p) / (p.def.attack.range || 1)) };
+    const range = (isSuper ? p.def.superAtk.range : p.def.attack.range) || 1;
+    return { ...Vec.norm(t.x - p.x, t.y - p.y), power: Math.min(1, Vec.dist(t, p) / range) };
   }
   frame(t) {
     const dt = Math.min(0.05, (t - this.last) / 1000); this.last = t;
@@ -39,7 +40,7 @@ class App {
     if (m) {
       const aim = this.aimDir();
       for (const e of this.input.drain()) {
-        if (e.type === 'super') m.weapons.superAttack(m.player, aim || this.autoAim());
+        if (e.type === 'super') m.weapons.superAttack(m.player, this.aimDir(true) || this.autoAim(true));
         if (e.type === 'fire') m.weapons.attack(m.player, e.auto ? this.autoAim() : e.dir);
       }
       if (!this.input.touch && this.input.mouse.down && aim) m.weapons.attack(m.player, aim);
