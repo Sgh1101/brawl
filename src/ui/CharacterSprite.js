@@ -17,7 +17,7 @@ export class CharacterSprite {
     return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
   }
   // b: Brawler, team: 팀 색, t: 경기 시간, dt: 프레임 시간
-  static draw(ctx, b, team, t, dt) {
+  static draw(ctx, b, team, t, dt, front = false) {
     const a = CharacterSprite.step(b, dt), r = b.r * 0.85, def = b.def, w = a.moving;
     const walk = Math.sin(a.phase), breathe = Math.sin(t * 2.6 + b.uid);
     const lift = Math.abs(walk) * r * 0.22 * w;                          // 걸을 때 통통 튐
@@ -32,7 +32,7 @@ export class CharacterSprite {
     // 팀 색 고리 (그림자 위) + 바라보는 방향 표시
     // 위를 볼 때는 화살표가 몸통 뒤에 가려지므로 몸통 다음에 그림
     const back = aim.y < 0;
-    if (team) { ctx.strokeStyle = team; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, 0, 7); ctx.stroke();
+    if (team) { CharacterSprite.ring(ctx, team, r, gy, 0, 7);
       if (!back) CharacterSprite.facing(ctx, team, ang, r, gy); }
     // 발: 걸을 때 앞뒤로 엇갈림
     for (const s of [-1, 1]) {
@@ -66,7 +66,12 @@ export class CharacterSprite {
       ctx.fillRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.strokeRect(-r * 0.12, -r * 1.75, r * 0.24, r * 0.7); ctx.restore(); }
     ctx.restore();
     if (team && back) CharacterSprite.facing(ctx, team, ang, r, gy);
+    if (team && front) { CharacterSprite.ring(ctx, team, r, gy, 0, Math.PI); CharacterSprite.facing(ctx, team, ang, r, gy); }
     ctx.restore();
+  }
+  // 팀 색 고리 (start~end 호). front일 땐 앞쪽 반원만 몸통 위에 한 번 더
+  static ring(ctx, team, r, gy, start, end) {
+    ctx.strokeStyle = team; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(0, gy, r * 1.15, r * 0.45, 0, start, end); ctx.stroke();
   }
   // 바라보는 방향 화살표 (팀 색, 고리 위)
   static facing(ctx, team, ang, r, gy) {
@@ -76,13 +81,13 @@ export class CharacterSprite {
   }
   // 반투명(수풀·흐림)으로 그릴 때: 한 장으로 그린 뒤 통째로 투명도를 줘서 몸통 아래 고리/화살표가 비쳐 섞이지 않게
   static layer = null;
-  static drawFaded(ctx, b, team, t, dt, alpha) {
+  static drawFaded(ctx, b, team, t, dt, alpha, front = false) {
     const m = ctx.getTransform(), s = Math.hypot(m.a, m.b), S = Math.ceil(b.r * 5 * s);
     const L = CharacterSprite.layer ||= document.createElement('canvas');
     if (L.width < S) L.width = L.height = S;
     const c = L.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, S, S);
     c.setTransform(s, 0, 0, s, S / 2 - b.x * s, S / 2 - b.y * s);
-    CharacterSprite.draw(c, b, team, t, dt);
+    CharacterSprite.draw(c, b, team, t, dt, front);
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha;
     ctx.drawImage(L, 0, 0, S, S, m.a * b.x + m.c * b.y + m.e - S / 2, m.b * b.x + m.d * b.y + m.f - S / 2, S, S); ctx.restore();
   }
