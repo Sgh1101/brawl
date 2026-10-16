@@ -53,7 +53,8 @@ export class Renderer {
     walls(1);
     Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
-    for (const b of shown) { ctx.globalAlpha = m.visibleTo(b, p) ? 1 : 0.5; Renderer.bars(ctx, b, Renderer.teamColor(b, p), lift.get(b), b.team !== p.team); }
+    for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
+      ctx.globalAlpha = m.visibleTo(b, p) ? 1 : 0.5; Renderer.bars(ctx, b, Renderer.teamColor(b, p), lift.get(b), b.team !== p.team); }
     ctx.globalAlpha = 1;
     for (const pr of m.weapons.projectiles) {
       ctx.fillStyle = pr.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
