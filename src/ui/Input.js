@@ -24,7 +24,6 @@ export class Input {
     if (Math.hypot(e.clientX - L.sup.x, e.clientY - L.sup.y) < L.R * 0.8) { this.events.push({ type: 'super' }); return; }
     const key = e.clientX < innerWidth / 2 ? 'move' : 'aim';
     // 조준 스틱: 스틱 근처를 누르면 스틱 중심 기준, 그 밖(예: 적을 직접 탭)이면 누른 자리를 중심으로 띄움.
-    // 예전엔 늘 스틱 중심 기준이라, 화면 오른쪽을 탭하면 탭 위치→스틱 방향(대개 왼쪽)으로 최대 세기 발사돼 적을 못 맞히고 슈퍼도 안 찼음.
     const nearAim = Math.hypot(e.clientX - L.aim.x, e.clientY - L.aim.y) < L.R * Input.AIM_GRAB;
     const base = key === 'move' || !nearAim ? { x: e.clientX, y: e.clientY } : { ...L.aim };
     this.sticks[key] = { id: e.pointerId, base, dx: 0, dy: 0, mag: 0 };

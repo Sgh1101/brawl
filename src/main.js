@@ -34,9 +34,11 @@ class App {
   }
   autoAim(isSuper = false) {
     const m = this.match, p = m.player;
-    const t = m.brawlers.filter(e => e.team !== p.team && !e.dead && m.visibleTo(e, p)).sort((a, b) => Vec.dist(a, p) - Vec.dist(b, p))[0];
-    if (!t) return { ...p.aim, power: 1 };
+    // 사거리 안의 가장 가까운 적을 조준, 없으면 바라보는 방향(마지막 이동 방향)으로 발사
     const range = (isSuper ? p.def.superAtk.range : p.def.attack.range) || 1;
+    const t = m.brawlers.filter(e => e.team !== p.team && !e.dead && m.visibleTo(e, p) && Vec.dist(e, p) <= range)
+      .sort((a, b) => Vec.dist(a, p) - Vec.dist(b, p))[0];
+    if (!t) return { ...(p.facing || p.aim), power: 1 };
     return { ...Vec.norm(t.x - p.x, t.y - p.y), power: Math.min(1, Vec.dist(t, p) / range) };
   }
   frame(t) {
@@ -51,7 +53,9 @@ class App {
       if (!this.input.touch && this.input.mouse.down && aim) m.weapons.attack(m.player, aim);
       if (aim && !m.player.dash) m.player.aim = aim;
       this.renderer.aimPreview = aim;
-      m.update(dt, this.input.moveVector());
+      const mv = this.input.moveVector();
+      if (mv.x || mv.y) m.player.facing = { x: mv.x, y: mv.y };
+      m.update(dt, mv);
       this.renderer.draw(m, this.input); Hud.draw(this.renderer.ctx, m, this.input);
       if (m.over) this.finish(m);
     } else {
