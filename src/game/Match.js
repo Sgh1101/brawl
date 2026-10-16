@@ -12,9 +12,8 @@ export class Match {
     this.arena = new Arena(Maps.gemGrab);
     this.time = 0; this.timeLeft = Match.DURATION; this.over = null; this.stats = { kills: 0, deaths: 0 };
     this.weapons = new Weapons(this);
-    const ids = Brawlers.list.map(b => b.id);
-    const others = ids.filter(i => i !== playerBrawler);
-    const blue = [playerBrawler, ...others], red = [...ids].sort(() => Math.random() - 0.5);
+    const ids = Brawlers.list.map(b => b.id), shuffle = a => [...a].sort(() => Math.random() - 0.5);
+    const blue = [playerBrawler, ...shuffle(ids.filter(i => i !== playerBrawler)).slice(0, 2)], red = shuffle(ids).slice(0, 3);
     this.brawlers = [
       ...blue.map((id, i) => new Brawler(id, 'blue', this.arena.spawns.blue[i], i === 0)),
       ...red.map((id, i) => new Brawler(id, 'red', this.arena.spawns.red[i])),

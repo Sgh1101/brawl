@@ -7,7 +7,14 @@ export class Bot {
     const br = b.brain;
     const enemies = m.brawlers.filter(e => e.team !== b.team && !e.dead && m.visibleTo(e, b));
     let target = null, td = 1e9;
-    for (const e of enemies) { const d = Vec.dist(b, e); if (d < td) { td = d; target = e; } }
+    const role = b.def.role;
+    // 암살: 체력 낮은 적 우선 / 그 외: 가장 가까운 적
+    const score = e => Vec.dist(b, e) * (role === '암살' ? 0.4 + e.hp / e.def.hp : 1);
+    for (const e of enemies) { const d = score(e); if (d < td) { td = d; target = e; } }
+    if (target) td = Vec.dist(b, target);
+    if (role === '서포트') { const w = Bot.support(b, m, dt); if (w) return Bot.avoid(b, w, m, dt); }
+    if (role === '암살' && target && b.superReady && td < b.def.superAtk.range * 0.9 && m.arena.lineClear(b, target)
+        && target.hp < target.def.hp * 0.7) { m.weapons.superAttack(b, Vec.norm(target.x - b.x, target.y - b.y)); }
     const range = b.def.attack.range;
     let goal = m.mode.objectiveFor(b);
     if (b.hp < b.def.hp * 0.35 && target && td < range * 1.3) goal = { kind: 'retreat', x: b.spawn.x, y: b.spawn.y };
@@ -25,7 +32,7 @@ export class Bot {
       }
       br.strafeT -= dt; if (br.strafeT <= 0) { br.strafeT = 0.6 + Math.random(); br.strafe *= -1; }
       const to = Vec.norm(target.x - b.x, target.y - b.y);
-      const ideal = range * 0.7, push = td > ideal ? 0.6 : -0.6;
+      const ideal = range * (role === '저격' ? 0.92 : role === '암살' ? 0.4 : 0.7), push = td > ideal ? 0.6 : -0.6;
       want = { x: to.x * push - to.y * br.strafe, y: to.y * push + to.x * br.strafe };
       if (goal.kind === 'collect' || goal.kind === 'retreat') want = Bot.toward(b, goal, m, 0.7, want);
     } else {
@@ -37,6 +44,18 @@ export class Bot {
       want = Bot.toward(b, goal, m, 1);
     }
     return Bot.avoid(b, want, m, dt);
+  }
+  // 서포트: 다친 아군이 근처에 있으면 그쪽으로 붙어서 힐 탄/힐 슈퍼를 쏨
+  static support(b, m, dt) {
+    const hurt = m.brawlers.filter(a => a.team === b.team && a !== b && !a.dead && a.hp < a.def.hp * 0.75 && Vec.dist(a, b) < 650)
+      .sort((p, q) => p.hp / p.def.hp - q.hp / q.def.hp)[0];
+    if (!hurt) return null;
+    const d = Vec.dist(b, hurt), dir = Vec.norm(hurt.x - b.x, hurt.y - b.y);
+    if (d < b.def.attack.range * 0.9 && m.arena.lineClear(b, hurt)) {
+      if (b.superReady && d < b.def.superAtk.range) m.weapons.superAttack(b, { ...dir, power: d / b.def.superAtk.range });
+      else if (b.ammo >= 1 && Math.random() < 0.08) m.weapons.attack(b, dir);
+    }
+    return d > 220 ? dir : { x: -dir.y * b.brain.strafe * 0.5, y: dir.x * b.brain.strafe * 0.5 };
   }
   static toward(b, g, m, w, base = { x: 0, y: 0 }) {
     const d = Math.hypot(g.x - b.x, g.y - b.y);
