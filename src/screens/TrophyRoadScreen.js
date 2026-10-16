@@ -2,7 +2,7 @@ import { ScreenManager } from './ScreenManager.js';
 import { TrophyRoad } from '../data/TrophyRoad.js';
 import { Brawlers } from '../data/Brawlers.js';
 import { Progress } from '../core/Progress.js';
-import { BrawlerArt } from '../ui/BrawlerArt.js';
+import { CharacterSprite } from '../ui/CharacterSprite.js';
 
 // 트로피 로드: 총 트로피 구간별 보상(코인 수령) + 캐릭터 해금
 export class TrophyRoadScreen {
@@ -28,7 +28,7 @@ export class TrophyRoadScreen {
     root.appendChild(el);
     el.querySelectorAll('canvas[data-art]').forEach(c => {
       const ctx = c.getContext('2d'); if (d.best < TrophyRoad.milestones.find(m => m.unlock === c.dataset.art).at) ctx.filter = 'brightness(0.15)';
-      BrawlerArt.draw(ctx, Brawlers.get(c.dataset.art), 40, 44, 24, { x: 0, y: -1 });
+      CharacterSprite.icon(ctx, Brawlers.get(c.dataset.art), 40, 42, 24);
     });
     el.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => { Progress.claim(+b.dataset.claim); app.screens.show(TrophyRoadScreen); });
     el.querySelector('#back').onclick = () => app.goHome();

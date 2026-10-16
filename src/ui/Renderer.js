@@ -1,4 +1,4 @@
-import { BrawlerArt } from './BrawlerArt.js';
+import { CharacterSprite } from './CharacterSprite.js';
 
 // 색 규칙: 내 캐릭터 초록, 아군 파랑, 적 빨강. 보라는 젬 전용.
 export const COLORS = { me: '#3dff6e', ally: '#2f7bff', enemy: '#ff3b3b' };
@@ -17,6 +17,7 @@ export class Renderer {
     return { x: a.w < W / s ? a.w / 2 : x, y, s, cy };
   }
   draw(m, input) {
+    this.frameDt = Math.max(0, Math.min(0.05, m.time - (this.lastT ?? m.time))); this.lastT = m.time;
     const ctx = this.ctx, a = m.arena, T = a.T, p = m.player;
     this.cam = Renderer.camera(p, a, T, m.mode.focus ?? a.mine); const s = this.cam.s;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -45,13 +46,13 @@ export class Renderer {
     const shown = m.brawlers.filter(b => !b.dead && (m.visibleTo(b, p) || b.gems >= Renderer.CARRIER_GLOW)), lift = Renderer.labelLift(shown);
     for (const b of shown) {
       const inBush = a.bushAt(b.x, b.y), ghost = !m.visibleTo(b, p);
-      ctx.globalAlpha = ghost ? 0.3 : inBush ? 0.55 : 1;
-      ctx.fillStyle = '#0003'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 18, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
-      BrawlerArt.draw(ctx, b.def, b.x, b.y, b.r * 0.85, b.aim, Renderer.teamColor(b, p));
-      if (b.flash > 0) { ctx.fillStyle = '#fff8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); }
-      ctx.globalAlpha = 1;
+      const alpha = ghost ? 0.3 : inBush ? 0.55 : 1;
+      if (alpha < 1) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt, alpha);
+      else CharacterSprite.draw(ctx, b, Renderer.teamColor(b, p), m.time, this.frameDt);
     }
     walls(1);
+    // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (적은 위 규칙대로 숨김/드러남)
+    for (const b of shown) if (b.team === p.team && a.bushAt(b.x, b.y)) CharacterSprite.drawFaded(ctx, b, Renderer.teamColor(b, p), m.time, 0, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
@@ -86,6 +87,7 @@ export class Renderer {
     Renderer.gem(ctx, p.x, p.y, 13 + pulse * 2);
   }
   static CARRIER_GLOW = 4;
+  static BUSH_ALLY_ALPHA = 0.5;
   // 광산이 화면 밖이면 화면 가장자리(점수판 아래)에 방향 표시 + 젬 아이콘
   static mineArrow(ctx, cam, mine, t) {
     const W = innerWidth, H = innerHeight, sx = W / 2 + (mine.x - cam.x) * cam.s, sy = cam.cy + (mine.y - cam.y) * cam.s;
