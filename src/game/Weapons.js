@@ -3,6 +3,7 @@ import { Vec } from '../core/Vec.js';
 export class Weapons {
   constructor(match) { this.m = match; this.projectiles = []; this.blasts = []; }
   attack(b, dir) {
+    if (this.m.mode.onAttack?.(b, dir)) return true; // 모드가 공격을 가로챔 (예: 볼 러시에서 공 차기)
     if (!b.canAttack()) return false;
     b.ammo -= 1; b.cd = 0.35; b.lastAttack = this.m.time; b.aim = dir;
     this.fire(b, b.def.attack, dir, false); return true;

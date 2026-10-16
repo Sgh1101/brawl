@@ -54,6 +54,7 @@ export class Renderer {
     // 수풀 속 나/아군: 수풀 위에 반투명으로 한 번 더 그려서 늘 보이게 (몸통만 반투명, 팀 고리는 불투명 + 테두리) (적은 위 규칙대로 숨김/드러남)
     for (const b of shown) if (b.team === p.team && Renderer.touchesBush(a, b)) CharacterSprite.drawInBush(ctx, b, Renderer.teamColor(b, p), m.time, Renderer.BUSH_ALLY_ALPHA);
     if (a.mine) Renderer.mineRing(ctx, a.mine, T, m.mode); // 다음 젬 타이머 고리는 수풀 위에
+    m.mode.drawTop?.(ctx); // 모드 물건을 수풀·캐릭터 위에 (볼 러시의 공)
     // 체력 막대·젬 수는 캐릭터/수풀 다 그린 뒤 맨 위에 (가려지지 않게)
     for (const b of [...shown.filter(o => o !== p), ...shown.filter(o => o === p)]) { // 내 라벨은 맨 마지막(맨 위)
       ctx.globalAlpha = m.visibleTo(b, p) ? 1 : 0.5; Renderer.bars(ctx, b, Renderer.teamColor(b, p), lift.get(b), b.team !== p.team); }
