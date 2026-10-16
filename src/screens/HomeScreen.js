@@ -26,8 +26,7 @@ export class HomeScreen {
         <div class="pill coin">🪙 <b>${save.coins || 0}</b></div></div>
       <div class="side">
         <button class="btn yellow bounce" id="roadBtn">트로피 로드</button>
-        <button class="btn gray disabled" title="곧 추가">상점</button>
-        <button class="btn gray disabled" title="곧 추가">설정</button></div>
+</div>
       <div class="center"><canvas id="hero" width="440" height="440"></canvas>
         <div class="bname stroke">${def.name}</div><div class="brole stroke">${def.role} · 🏆 ${Progress.trophiesOf(save, def.id)}</div></div>
       <div class="roster">${Brawlers.list.map(card).join('')}</div>
