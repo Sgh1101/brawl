@@ -15,31 +15,30 @@ export class Renderer {
     // 바닥
     for (let y = 0; y < a.rows; y++) for (let x = 0; x < a.cols; x++) {
       ctx.fillStyle = (x + y) % 2 ? '#e8c27a' : '#e2b96c'; ctx.fillRect(x * T, y * T, T, T); }
-    ctx.fillStyle = '#7a4fd0'; ctx.beginPath(); ctx.arc(a.mine.x, a.mine.y, T * 0.7, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#2b1a55'; ctx.beginPath(); ctx.arc(a.mine.x, a.mine.y, T * 0.4, 0, Math.PI * 2); ctx.fill();
-    for (const g of m.mode.gems) Renderer.gem(ctx, g.x, g.y, 11);
+    Renderer.mine(ctx, a.mine, T, m.time, m.mode);
+    for (const g of m.mode.gems) Renderer.gem(ctx, g.x, g.y + Math.sin(m.time * 4 + g.x) * 2, 15, true);
     const walls = (pass) => { for (let y = 0; y < a.rows; y++) for (let x = 0; x < a.cols; x++) {
       const c = a.grid[y][x];
-      if (pass === 0 && (c === '#' || c === 'W')) {
-        ctx.fillStyle = c === '#' ? '#5a4632' : '#b5703a'; ctx.fillRect(x * T, y * T - 8, T, T + 8);
-        ctx.fillStyle = c === '#' ? '#7a634a' : '#d68b4e'; ctx.fillRect(x * T + 2, y * T - 8, T - 4, T - 6);
-        if (c === 'W') { ctx.strokeStyle = '#7a4520'; ctx.lineWidth = 2; ctx.strokeRect(x * T + 8, y * T, T - 16, T - 22); }
+      if (pass === 0 && c === '#') {
+        ctx.fillStyle = '#5a4632'; ctx.fillRect(x * T, y * T - 8, T, T + 8);
+        ctx.fillStyle = '#7a634a'; ctx.fillRect(x * T + 2, y * T - 8, T - 4, T - 6);
       }
+      if (pass === 0 && c === 'W') Renderer.fence(ctx, x * T, y * T, T);
       if (pass === 1 && c === 'B') { ctx.fillStyle = '#2f9e44cc'; ctx.beginPath();
         for (let i = 0; i < 4; i++) ctx.arc(x * T + 12 + (i % 2) * 24, y * T + 12 + (i >> 1) * 24, 16, 0, Math.PI * 2); ctx.fill(); }
     } };
     walls(0);
     // 조준선
     if (!p.dead && this.aimPreview) Renderer.aimLine(ctx, p, this.aimPreview);
-    for (const b of m.brawlers) {
-      if (b.dead || !m.visibleTo(b, p)) continue;
+    const shown = m.brawlers.filter(b => !b.dead && m.visibleTo(b, p)), lift = Renderer.labelLift(shown);
+    for (const b of shown) {
       const inBush = a.bushAt(b.x, b.y);
       ctx.globalAlpha = inBush ? 0.55 : 1;
       ctx.fillStyle = '#0003'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 18, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
       BrawlerArt.draw(ctx, b.def, b.x, b.y, b.r * 0.85, b.aim, b === p ? '#3dff6e' : TEAM[b.team]);
       if (b.flash > 0) { ctx.fillStyle = '#fff8'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill(); }
       ctx.globalAlpha = 1;
-      Renderer.bars(ctx, b, b === p ? '#3dff6e' : TEAM[b.team]);
+      Renderer.bars(ctx, b, b === p ? '#3dff6e' : TEAM[b.team], lift.get(b));
     }
     walls(1);
     for (const pr of m.weapons.projectiles) {
@@ -58,12 +57,43 @@ export class Renderer {
       ctx.arc(p.x, p.y, a.range, ang - sp, ang + sp); ctx.closePath(); ctx.fill(); }
     ctx.restore();
   }
-  static gem(ctx, x, y, r) {
+  // 젬 광산: 늘 보이는 보라 고리 + 맥동하는 빛 + 다음 젬까지 남은 시간 고리
+  static mine(ctx, p, T, t, mode) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 3);
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, T * 2.2);
+    g.addColorStop(0, `rgba(200,107,255,${0.55 + pulse * 0.25})`); g.addColorStop(1, 'rgba(200,107,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, T * 2.2, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3a1f73'; ctx.beginPath(); ctx.arc(p.x, p.y, T * 0.75, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e3b5ff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(p.x, p.y, T * 0.75, 0, 7); ctx.stroke();
+    const f = 1 - Math.max(0, mode.spawnT) / mode.constructor.SPAWN_EVERY;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, T * 0.95, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); ctx.stroke();
+    Renderer.gem(ctx, p.x, p.y, 13 + pulse * 2);
+  }
+  // 부서지는 벽(W): 나무 울타리 (일반 공격으론 안 부서지고 슈퍼로만 부서짐)
+  static fence(ctx, x, y, T) {
+    ctx.fillStyle = '#0003'; ctx.fillRect(x + 2, y + T - 10, T - 4, 8);
+    ctx.fillStyle = '#8a5a2b'; ctx.fillRect(x, y + 6, T, 7); ctx.fillRect(x, y + 24, T, 7);
+    for (let i = 0; i < 3; i++) { const px = x + 3 + i * 15;
+      ctx.fillStyle = '#c98a4b'; ctx.beginPath(); ctx.moveTo(px, y + T - 6); ctx.lineTo(px, y - 4); ctx.lineTo(px + 6, y - 11); ctx.lineTo(px + 12, y - 4); ctx.lineTo(px + 12, y + T - 6); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#5e3a17'; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  // 체력 숫자 겹침 방지: 가까운 캐릭터끼리는 아래쪽 캐릭터 막대를 위로 올림
+  static labelLift(list) {
+    const lift = new Map(), placed = [];
+    for (const b of [...list].sort((p, q) => p.y - q.y)) {
+      let L = b.y;
+      for (const o of placed) if (Math.abs(o.x - b.x) < 62 && Math.abs(L - o.L) < 34) L = o.L - 34;
+      placed.push({ x: b.x, L }); lift.set(b, L - b.y);
+    }
+    return lift;
+  }
+  static gem(ctx, x, y, r, glow = false) {
+    if (glow) { ctx.fillStyle = '#e9b8ff66'; ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, 7); ctx.fill(); }
     ctx.fillStyle = '#c86bff'; ctx.strokeStyle = '#2b0a4a'; ctx.lineWidth = 2; ctx.beginPath();
     ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.8, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.8, y); ctx.closePath(); ctx.fill(); ctx.stroke();
   }
-  static bars(ctx, b, col) {
-    const w = 54, x = b.x - w / 2, y = b.y - b.r - 22;
+  static bars(ctx, b, col, lift = 0) {
+    const w = 54, x = b.x - w / 2, y = b.y - b.r - 22 + lift;
     ctx.fillStyle = '#000'; ctx.fillRect(x - 2, y - 2, w + 4, 11);
     ctx.fillStyle = col; ctx.fillRect(x, y, w * Math.max(0, b.hp / b.def.hp), 7);
     ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText(Math.ceil(b.hp), b.x, y - 4);

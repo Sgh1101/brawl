@@ -8,7 +8,8 @@ import { Modes } from '../modes/Modes.js';
 
 export class Match {
   static DURATION = 150; // 2분 30초
-  constructor({ mode = 'gemGrab', playerBrawler = 'bolder' }) {
+  constructor({ mode = 'gemGrab', playerBrawler = 'bolder', easy = false }) {
+    this.easy = easy; // 처음 몇 판: 봇이 덜 공격적
     this.arena = new Arena(Maps.gemGrab);
     this.time = 0; this.timeLeft = Match.DURATION; this.over = null; this.stats = { kills: 0, deaths: 0 };
     this.weapons = new Weapons(this);

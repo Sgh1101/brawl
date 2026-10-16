@@ -46,3 +46,5 @@ canvas{display:block;width:100vw;height:100vh}
 .reward canvas{width:64px;height:64px}.reward .big{font-size:42px}.reward b{font-size:20px}.reward small{font-family:system-ui;font-weight:800;font-size:12px}
 .done{color:#7dff9a}
 @media (max-height:500px){.center{top:36%}.bname{font-size:28px}.center canvas{width:150px;height:150px}.roster{max-width:calc(100vw - 260px)}.btn.play{font-size:30px;padding:8px 34px}}
+/* 짧은 가로 화면(폰 가로 852x393 등): 로스터를 왼쪽에 붙여 오른쪽 모드 카드/PLAY와 안 겹치게 */
+@media (max-height:500px){.roster{left:12px;transform:none;max-width:calc(100vw - 270px)}.bottomright{width:230px}.mode{width:100%;box-sizing:border-box}}

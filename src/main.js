@@ -1,4 +1,5 @@
 import { Match } from './game/Match.js';
+import { Bot } from './game/Bot.js';
 import { Input } from './ui/Input.js';
 import { Renderer } from './ui/Renderer.js';
 import { Hud } from './ui/Hud.js';
@@ -18,7 +19,7 @@ class App {
     this.goHome(); requestAnimationFrame(t => this.frame(t));
   }
   goHome() { this.match = null; this.screens.show(HomeScreen); }
-  startMatch(opts) { this.lastOpts = opts; this.match = new Match(opts); this.input.drain(); this.screens.show(null); }
+  startMatch(opts) { this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); this.input.drain(); this.screens.show(null); }
   aimDir(isSuper = false) {
     const p = this.match.player, s = this.input.sticks.aim;
     if (s && s.mag > 0.25) return { x: s.dx, y: s.dy, power: s.mag };
@@ -58,7 +59,7 @@ class App {
     const result = m.over.winner === 'draw' ? 'draw' : m.over.playerWon ? 'win' : 'lose';
     const r = Progress.applyResult(m.player.def.id, result);
     this.match = null;
-    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, unlocked: r.unlocked, stats: m.stats });
+    this.screens.show(ResultsScreen, { result, trophyDelta: r.delta, coins: r.coins, unlocked: r.unlocked, stats: m.stats });
   }
 }
 window.app = new App();
