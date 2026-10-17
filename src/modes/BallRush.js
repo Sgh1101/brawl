@@ -4,7 +4,7 @@ import { COLORS } from '../ui/Renderer.js';
 // 볼 러시 (3대3 공차기): 가운데 공을 주워 상대 골대에 넣기. 2골 먼저 넣으면 승리, 시간이 끝나면 골 많은 팀 승리(같으면 무승부).
 // 맵의 U = 위쪽 골대(파랑 팀 골대, 빨강이 넣는 곳), D = 아래쪽 골대(빨강 팀 골대), O = 공 시작 위치.
 export class BallRush {
-  static GOAL = 2; static BALL_R = 12; static KICK = 700; static KICK_DIST = 170; static FRICTION = BallRush.KICK / BallRush.KICK_DIST; static PAUSE = 2; static REPICK = 0.4;
+  static GOAL = 2; static BALL_R = 12; static KICK = 700; static KICK_DIST = 170; static FRICTION = BallRush.KICK / BallRush.KICK_DIST; static PAUSE = 2; static REPICK = 0.4; static CARRY_SPEED = 0.8; // 공 든 캐릭터 이동 속도 배율
   // FRICTION: 속도가 매초 FRICTION 비율로 줄어 찬 공은 약 KICK / FRICTION = KICK_DIST(170px) 가고 멈춤
   static INTRO_TEXT = ['공을 주워 상대 골대에 넣어!', '공 들고 공격 = 차기 · 2골 먼저 넣으면 승리'];
   static DEATH_TIP = '죽으면 공을 떨어뜨려요';
@@ -33,7 +33,9 @@ export class BallRush {
     }
     ball.kickT -= dt;
     if (ball.carrier) {
-      const c = ball.carrier, d = Vec.norm(c.aim.x, c.aim.y);
+      const c = ball.carrier, k = 1 - BallRush.CARRY_SPEED; // 이번 프레임 이동의 20%를 되돌려 0.8배 속도로 (돌진 중엔 그대로)
+      if (!c.dash) { c.x -= c.vx * dt * k; c.y -= c.vy * dt * k; c.vx *= BallRush.CARRY_SPEED; c.vy *= BallRush.CARRY_SPEED; }
+      const d = Vec.norm(c.aim.x, c.aim.y);
       ball.x = c.x + d.x * (c.r + 4); ball.y = c.y + d.y * (c.r + 4);
       if (a.circleHits(ball.x, ball.y, R)) { ball.x = c.x; ball.y = c.y; }
     } else {
