@@ -9,6 +9,8 @@ import { ScreenManager } from './screens/ScreenManager.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { ResultsScreen } from './screens/ResultsScreen.js';
 
+const NO_BOTS = new URLSearchParams(location.search).get('bots') === '0'; // 테스트용: ?bots=0 이면 봇 없이 혼자
+
 class App {
   constructor() {
     this.canvas = document.getElementById('game');
@@ -24,7 +26,7 @@ class App {
   }
   goHome() { this.match = null; this.screens.show(HomeScreen); }
   startMatch(opts) {
-    this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); this.input.drain(); this.screens.show(null); this.canvas.focus({ preventScroll: true }); }
+    this.lastOpts = opts; this.match = new Match({ ...opts, easy: Progress.matchesPlayed() < Bot.EASY_MATCHES }); if (NO_BOTS) this.match.brawlers = [this.match.player]; this.input.drain(); this.screens.show(null); this.canvas.focus({ preventScroll: true }); }
   // 첫 실행: 홈 대신 연습장. 끝나면 결과 화면 없이 홈으로.
   startTutorial() {
     this.match = new Match({ mode: 'tutorial', playerBrawler: Progress.load().selected });
