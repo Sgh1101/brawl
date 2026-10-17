@@ -5,10 +5,10 @@ import { Renderer } from './ui/Renderer.js';
 import { Hud } from './ui/Hud.js';
 import { Vec } from './core/Vec.js';
 import { Progress } from './core/Progress.js';
-import { Debug } from './core/Debug.js';
 import { ScreenManager } from './screens/ScreenManager.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { ResultsScreen } from './screens/ResultsScreen.js';
+const SLOW = Math.min(1, Math.max(0.1, parseFloat(new URLSearchParams(location.search).get('slow')) || 1));
 
 class App {
   constructor() {
@@ -49,7 +49,7 @@ class App {
     return { ...Vec.norm(t.x - p.x, t.y - p.y), power: Math.min(1, Vec.dist(t, p) / range) };
   }
   frame(t) {
-    const dt = Math.min(0.05, (t - this.last) / 1000) * Debug.slow(); this.last = t; // ?slow= 테스트용 느린 재생
+    const dt = Math.min(0.05, (t - this.last) / 1000) * SLOW; this.last = t; // ?slow=0.1~1 테스트용 느린 재생
     const m = this.match;
     if (m) {
       const aim = this.aimDir();
