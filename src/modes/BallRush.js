@@ -33,9 +33,7 @@ export class BallRush {
     }
     ball.kickT -= dt;
     if (ball.carrier) {
-      const c = ball.carrier, k = 1 - BallRush.CARRY_SPEED; // 이번 프레임 이동의 20%를 되돌려 0.8배 속도로 (돌진 중엔 그대로)
-      if (!c.dash) { c.x -= c.vx * dt * k; c.y -= c.vy * dt * k; c.vx *= BallRush.CARRY_SPEED; c.vy *= BallRush.CARRY_SPEED; }
-      const d = Vec.norm(c.aim.x, c.aim.y);
+      const c = ball.carrier, d = Vec.norm(c.aim.x, c.aim.y);
       ball.x = c.x + d.x * (c.r + 4); ball.y = c.y + d.y * (c.r + 4);
       if (a.circleHits(ball.x, ball.y, R)) { ball.x = c.x; ball.y = c.y; }
     } else {
@@ -64,6 +62,8 @@ export class BallRush {
     Object.assign(ball, { carrier: null, vx: d.x * BallRush.KICK, vy: d.y * BallRush.KICK, kickedBy: b, kickT: BallRush.REPICK });
     b.cd = 0.35; b.lastAttack = this.m.time; b.aim = d; return true;
   }
+  // 이동 속도 배율 (Brawler.update가 씀): 공 든 캐릭터만 느리게
+  speedMul(b) { return b === this.ball.carrier ? BallRush.CARRY_SPEED : 1; }
   onDeath(b) { if (this.ball.carrier === b) { this.ball.carrier = null; this.ball.vx = this.ball.vy = 0; } }
   result() {
     for (const t of ['blue', 'red']) if (this.score[t] >= BallRush.GOAL && (this.goalAt === null || this.m.time - this.goalAt > 1)) return t;
