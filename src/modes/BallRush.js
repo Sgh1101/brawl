@@ -105,6 +105,7 @@ export class BallRush {
     ctx.fillStyle = '#0004'; ctx.beginPath(); ctx.ellipse(ball.x, ball.y + R * 0.8, R, R * 0.45, 0, 0, 7); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1206'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ball.x, ball.y, R, 0, 7); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#1a1206'; ctx.beginPath(); ctx.arc(ball.x, ball.y, R * 0.38, 0, 7); ctx.fill();
+    if (ball.carrier) { ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ball.x, ball.y, R + 3, 0, 7); ctx.stroke(); } // 누가 들고 있으면 밝은 테두리 한 겹
   }
   // 결과 화면에 보일 최종 점수 (HUD와 같은 순서: 우리 팀 : 상대)
   resultSummary() { const mine = this.m.player.team, theirs = mine === 'blue' ? 'red' : 'blue'; return `${this.score[mine]} : ${this.score[theirs]}`; }
