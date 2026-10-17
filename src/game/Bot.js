@@ -15,6 +15,7 @@ export class Bot {
     // 암살: 체력 낮은 적 우선 / 그 외: 가장 가까운 적
     const score = e => Vec.dist(b, e) * (role === '암살' ? 0.4 + e.hp / e.def.hp : 1);
     for (const e of enemies) { const d = score(e); if (d < td) { td = d; target = e; } }
+    target = m.mode.preferTarget?.(b, enemies) || target; // 모드가 우선 노릴 적을 정할 수 있음 (볼 러시: 사거리 안의 공 든 적)
     if (target) td = Vec.dist(b, target);
     if (role === '서포트') { const w = Bot.support(b, m, dt); if (w) return Bot.avoid(b, w, m, dt); }
     if (role === '암살' && k.push && target && b.superReady && td < b.def.superAtk.range * 0.9 && m.arena.lineClear(b, target)
