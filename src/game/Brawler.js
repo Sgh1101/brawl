@@ -23,7 +23,7 @@ export class Brawler {
     if (match.time - Math.max(this.lastHurt, this.lastAttack) > 3 && this.hp < this.def.hp)
       this.hp = Math.min(this.def.hp, this.hp + this.def.hp * 0.13 * dt);
     if (this.dash) return match.weapons.updateDash(this, dt);
-    const speed = this.def.speed * 1.4;
+    const speed = this.def.speed * 1.4 * (match.mode.speedMul?.(this) ?? 1);
     this.moveBy(match.arena, move.x * speed * dt, move.y * speed * dt);
   }
   moveBy(arena, dx, dy) {
