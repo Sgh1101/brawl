@@ -84,6 +84,8 @@ export class BallRush {
     }
     return null;
   }
+  // 봇 조준: 공 든 적이 보이고 사거리 안이면 가장 가까운 적 대신 그 적을 노림
+  preferTarget(b, enemies) { const c = this.ball.carrier; return c && c.team !== b.team && enemies.includes(c) && Vec.dist(b, c) <= b.def.attack.range ? c : null; }
   objectiveFor() { return { kind: 'hold', x: this.ball.x, y: this.ball.y }; }
   // 골대 칸 (팀 색으로 칠함, 바닥 위)
   drawWorld(ctx) {
